@@ -1,0 +1,31 @@
+# Cursor Rules for Code Tutor CLI
+
+## Goals
+- CommonJS + Commander.js 기반 CLI 유지
+- Ollama 로컬 우선(네트워크 의존 최소화)
+- 안전: 드라이런/덮어쓰기 방지/상대 경로 제한
+
+## Code Style
+- Node >=18, CommonJS require 사용
+- 파일명: 소문자-케밥 또는 lowerCamel (폴더/파일 일관)
+- 예외 메시지: 한국어 우선, 간결/행동지향
+
+## Structure
+- bin/ct.js — 엔트리
+- src/cli/* — 명령 구현(tutor, quest, doctor, models)
+- src/ai/ollama.js — REST 클라이언트
+- src/tutor/prompt.js — 프롬프트 템플릿
+- src/generate/codegen.js — 코드/README 생성기
+- src/config/index.js — 설정 로더
+- src/utils/fs.js — 파일 유틸
+- docs/ — PRD/TRD/PROMPTS 등 문서만 위치(소스와 분리)
+
+## Commit / PR
+- Conventional Commits: feat/fix/docs/chore/refactor
+- 작은 PR, 기능 단위 테스트(가능 시)
+
+## Safety
+- 파일 생성 시 기본 outdir는 lessons/ 또는 quests/
+- 기존 경로 존재 시 중단(명시적 --overwrite 필요)
+- 실행 시 타임아웃 필수, 네트워크 비활성 기본
+
