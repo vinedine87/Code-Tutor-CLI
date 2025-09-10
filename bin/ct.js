@@ -1,21 +1,10 @@
 #!/usr/bin/env node
-const { Command } = require('commander');
-const pkg = require('../package.json');
+const { program } = require('commander');
 
-const program = new Command();
 program
   .name('ct')
-  .description('Code Tutor CLI — 자연어 기반 학습/실습/디버깅 도우미')
-  .version(pkg.version);
+  .description('Code Tutor CLI: 자연어 기반 학습/실습/디버깅 도우미 (Ollama 연동)')
+  .version('0.1.0');
 
-// Register subcommands
-require('../src/cli/tutor')(program);
-require('../src/cli/quest')(program);
-require('../src/cli/doctor')(program);
-require('../src/cli/models')(program);
-
-program.parseAsync(process.argv).catch((err) => {
-  console.error(err?.message || err);
-  process.exit(1);
-});
+program.parse(process.argv);
 
