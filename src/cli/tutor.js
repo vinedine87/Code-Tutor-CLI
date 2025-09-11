@@ -1,86 +1,82 @@
-const { Command } = require('commander');
-const chalk = require('chalk');
-const ora = require('ora');
 const path = require('path');
 const { loadConfig } = require('../config');
 const { createClient } = require('../ai/ollama');
 const { buildTutorMessages } = require('../tutor/prompt');
-const { slugify, timestamp } = require('../utils/fs');
+const { slugify, timestamp, writeFileSafe, ensureDirSafe } = require('../utils/fs');
 const { createRunnableLesson, createRunnableBundle } = require('../generate/codegen');
 
 module.exports = (program) => {
   program
-    .command('tutor')
-    .description('자연어 질문에 대한 난이도별 코드 예시/해설 제공')
-    .argument('<question...>', '질문(자연어)')
-    .option('--level <level>', 'elem|middle|high|college|basic', 'elem')
-    .option('--lang <lang>', 'python|javascript|java|cpp|c', 'python')
-    .option('--langs <list>', '여러 언어를 콤마로 지정: py,c,java', '')
-    .option('--runnable', '실행 가능한 코드 파일 생성', false)
-    .option('--basename <name>', '생성 파일 기본 이름(예: gugudan)', 'main')
+    .command('tutor <question>')
+    .description('질문을 설명하고 실행 가능한 코드 파일을 생성합니다')
+    .option('--level <level>', '레벨(elem|middle|high|college|basic)', 'elem')
+    .option('--lang <language>', '주요 언어 지정(python|javascript 등)', 'python')
+    .option('--langs <languages>', '여러 언어 동시 지정(콤마 구분, 예: py,c,java)')
+    .option('--basename <name>', '생성 파일의 기본 이름', 'main')
+    .option('--runnable', '생성 코드가 바로 실행 가능하도록 템플릿 사용', false)
     .option('--no-ai', 'AI 호출 없이 파일만 생성')
-    .option('--outdir <dir>', '출력 기본 디렉터리', '')
-    .option('--model <name>', '모델 이름(ollama 태그)', '')
-    .action(async (questionParts, opts) => {
-      const question = questionParts.join(' ');
+    .action(async (question, options) => {
       const cfg = loadConfig();
-      const client = createClient(cfg);
-      const model = opts.model || cfg.ollama.modelPrimary;
-
-      const langs = resolveLangs(opts.langs, opts.lang);
-
-      const spinner = ora(`모델(${model})로 응답 생성 중...`).start();
-      try {
-        let content = '';
-        if (opts.ai === false) {
-          spinner.stop();
-          content = [
-            `요약: "${question}" 주제에 대한 기본 예시입니다.`,
-            `레벨: ${opts.level}, 언어: ${opts.lang}`
-          ].join('\n');
-        } else {
-          const messages = buildTutorMessages({ question, level: opts.level, lang: opts.lang });
-          const data = await client.chat({ model, messages, stream: false, options: { temperature: 0.3 } });
-          spinner.stop();
-          content = data?.message?.content || data?.response || '';
+      const ollama = createClient(cfg);
+      const baseDir = path.join('lessons', `${timestamp()}-${slugify(question)}`);
+      const outDir = await ensureUniqueDir(baseDir);
+      const langs = resolveLangs(options.langs, options.lang);
+      let aiText = '';
+      if (!options.noAi) {
+        try {
+          const messages = buildTutorMessages({ question, level: options.level, lang: langs[0] });
+          const res = await ollama.chat({ model: cfg.ollama.modelPrimary, messages, stream: false });
+          aiText = res?.message?.content || res?.content || '';
+        } catch (e) {
+          aiText = `AI 연결 실패: ${e.message}`;
         }
-        console.log('\n' + chalk.cyan('해설:') + '\n');
-        console.log(content.trim());
-
-        if (opts.runnable) {
-          const slug = slugify(question).slice(0, 40) || 'lesson';
-          const base = opts.outdir || cfg.outputDir;
-          const outDir = path.join(base, `${timestamp()}-${slug}`);
-          if (langs.length > 1) {
-            const res = await createRunnableBundle({ outDir, title: question, langs, explanation: content, baseName: opts.basename });
-            console.log('\n' + chalk.green(`파일 생성: ${outDir}`));
-            res.files.forEach((f) => console.log(` - ${f.lang}: ${f.file}`));
-          } else {
-            await createRunnableLesson({ outDir, title: question, lang: langs[0], explanation: content, baseName: opts.basename });
-            console.log('\n' + chalk.green(`파일 생성: ${outDir}`));
-          }
-        }
-      } catch (err) {
-        spinner.stop();
-        console.error(chalk.red(String(err?.message || err)));
-        process.exitCode = 1;
       }
+      if (langs.length > 1) {
+        await createRunnableBundle({ outDir, title: question, langs, explanation: aiText, baseName: options.basename });
+      } else {
+        await createRunnableLesson({ outDir, title: question, lang: langs[0], explanation: aiText, baseName: options.basename });
+      }
+      const usage = [
+        '---',
+        '사용법 요약:',
+        '- ct chat   # 대화형 질문',
+        `- ct tutor "${question}" --lang ${langs[0]} --runnable`,
+        ''
+      ].join('\n');
+      await writeFileSafe(path.join(outDir, 'USAGE.txt'), usage);
+      console.log(`생성 완료: ${outDir}`);
     });
 };
 
 function resolveLangs(list, single) {
   const map = (s) => {
-    const v = s.trim().toLowerCase();
+    const v = String(s || '').trim().toLowerCase();
     if (v === 'py' || v === 'python') return 'python';
     if (v === 'js' || v === 'javascript') return 'javascript';
     if (v === 'c') return 'c';
     if (v === 'cpp' || v === 'c++') return 'cpp';
     if (v === 'java') return 'java';
-    return v;
+    return v || 'python';
   };
-  if (list && list.trim()) {
-    const arr = list.split(',').map(map).filter(Boolean);
+  if (list && String(list).trim()) {
+    const arr = String(list).split(',').map(map).filter(Boolean);
     return Array.from(new Set(arr));
   }
   return [map(single || 'python')];
+}
+
+async function ensureUniqueDir(base) {
+  let i = 0;
+  // 첫 시도는 base, 이후 base-1, base-2 ...
+  while (true) {
+    const dir = i === 0 ? base : `${base}-${i}`;
+    try {
+      await ensureDirSafe(dir);
+      return dir;
+    } catch (e) {
+      if (!String(e.message || '').includes('이미 존재')) throw e;
+      i += 1;
+      continue;
+    }
+  }
 }

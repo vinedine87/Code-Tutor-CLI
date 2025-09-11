@@ -1,10 +1,26 @@
 {
   "name": "code-tutor-cli",
   "version": "0.1.0",
-  "description": "Code Tutor CLI: 자연어 기반 학습/실습/디버깅 도우미 (Ollama 연동)",
+  "description": "Code Tutor CLI: 학습/연습/도우미 도구 (Ollama 연동)",
+  "keywords": ["cli", "tutor", "ollama", "ai", "chat", "coding"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://example.com/your/repo.git"
+  },
+  "bugs": {
+    "url": "https://example.com/your/repo/issues"
+  },
+  "homepage": "https://example.com/your/repo#readme",
   "bin": {
     "ct": "bin/ct.js"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "scripts/postinstall.js",
+    "README.md",
+    "docs/"
+  ],
   "type": "commonjs",
   "engines": {
     "node": ">=18"
@@ -14,13 +30,15 @@
     "build:pkg": "pkg -o dist/ct -t node20-win-x64,node20-linux-x64,node20-macos-x64,node20-macos-arm64 .",
     "lint": "echo 'lint stub'",
     "test": "echo 'no tests yet'",
-    "prepare": "echo 'husky not configured'"
+    "prepare": "echo 'husky not configured'",
+    "postinstall": "node scripts/postinstall.js || true"
   },
   "dependencies": {
     "axios": "^1.7.4",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
+    "inquirer": "^9.2.15",
     "ora": "^5.4.1"
   },
   "devDependencies": {
@@ -42,7 +60,6 @@
   "directories": {
     "doc": "docs"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC"
 }

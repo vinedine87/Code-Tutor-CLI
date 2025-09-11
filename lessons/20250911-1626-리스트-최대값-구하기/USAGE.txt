@@ -1,0 +1,4 @@
+---
+사용법 요약:
+- ct chat   # 대화형 질문
+- ct tutor "리스트 최대값 구하기" --lang python --runnable

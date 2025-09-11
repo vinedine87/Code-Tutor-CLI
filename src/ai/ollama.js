@@ -37,7 +37,7 @@ function createClient(cfg) {
 function mapError(err, cfg) {
   const base = `Ollama(${cfg.ollama.host}:${cfg.ollama.port})`;
   if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') {
-    return new Error(`${base} 연결 실패. ollama 서버가 실행 중인지 확인하세요. 예: 'ollama serve'`);
+    return new Error(`${base} 연결 실패. Ollama 서버가 실행 중인지 확인하세요. 예: 'ollama serve'`);
   }
   const msg = err?.response?.data || err?.message || String(err);
   return new Error(`${base} 오류: ${typeof msg === 'string' ? msg : JSON.stringify(msg)}`);

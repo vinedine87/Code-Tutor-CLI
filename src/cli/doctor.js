@@ -1,70 +1,54 @@
-const chalk = require('chalk');
-const { runHint } = require('../generate/codegen');
+const fs = require('fs');
+const { spawnSync } = require('child_process');
 const { loadConfig } = require('../config');
 const { createClient } = require('../ai/ollama');
-const cp = require('child_process');
 
 module.exports = (program) => {
   program
-    .command('doctor')
-    .description('Bug Doctor — 실행 에러 분석 및 수정 가이드')
-    .argument('<file>', '대상 코드 파일')
-    .option('--lang <lang>', '언어', 'python')
-    .option('--run <args>', '실행 인자 문자열', '')
-    .option('--timeout <s>', '타임아웃(초)', '5')
-    .option('--explain', 'AI 해설 포함', false)
-    .action(async (file, opts) => {
-      try {
-        const { stdout, stderr } = await runFile(file, opts.lang, opts.run, Number(opts.timeout));
-        if (stderr) {
-          console.log(chalk.yellow('에러 로그:'));
-          console.log(stderr.trim());
-        } else {
-          console.log(chalk.green('에러 없이 실행 완료'));
-        }
+    .command('doctor <filepath>')
+    .description('코드를 실행해 오류를 수집하고, 선택 시 AI로 수정 가이드를 제공합니다')
+    .option('--lang <language>', '코드 언어 지정(기본 python)', 'python')
+    .option('--explain', 'AI로 오류 설명과 수정 제안 제공')
+    .action(async (filepath, options) => {
+      if (!fs.existsSync(filepath)) {
+        console.log(`파일이 없습니다: ${filepath}`);
+        return;
+      }
+      let runOut = '';
+      let runErr = '';
+      if (options.lang === 'python' || filepath.endsWith('.py')) {
+        const res = spawnSync('python', [filepath], { encoding: 'utf-8' });
+        runOut = res.stdout || '';
+        runErr = res.stderr || (res.error ? String(res.error.message) : '');
+      } else if (filepath.endsWith('.mjs')) {
+        const res = spawnSync('node', [filepath], { encoding: 'utf-8' });
+        runOut = res.stdout || '';
+        runErr = res.stderr || (res.error ? String(res.error.message) : '');
+      } else {
+        console.log('지원되지 않는 파일 타입입니다. python 또는 node(.mjs)만 지원.');
+        return;
+      }
+      console.log('--- 실행 결과(stdout) ---');
+      console.log(runOut.trim());
+      console.log('--- 실행 오류(stderr) ---');
+      console.log(runErr.trim());
 
-        if (opts.explain && stderr) {
-          const cfg = loadConfig();
-          const client = createClient(cfg);
-          const prompt = [
-            { role: 'system', content: '당신은 디버깅 도우미입니다. 로그를 분석하고 수정 가이드를 제시합니다.' },
-            { role: 'user', content: `언어: ${opts.lang}\n파일: ${file}\n에러 로그:\n${stderr}\n수정 방향: 원인 → 패치 요약 → 주의점` }
-          ];
-          try {
-            const data = await client.chat({ model: cfg.ollama.modelCode, messages: prompt, stream: false, options: { temperature: 0.2 } });
-            const content = data?.message?.content || data?.response || '';
-            console.log('\n' + chalk.cyan('수정 가이드:') + '\n');
-            console.log(content.trim());
-          } catch (aiErr) {
-            console.error(chalk.red(String(aiErr?.message || aiErr)));
-          }
+      if (options.explain) {
+        const cfg = loadConfig();
+        const ai = createClient(cfg);
+        const messages = [
+          { role: 'system', content: '당신은 친절한 시니어 코드 리뷰어입니다. 오류를 찾아 설명하고 수정안을 제시하세요.' },
+          { role: 'user', content: `파일 경로: ${filepath}\n언어: ${options.lang}\n오류(stderr):\n${runErr || '(없음)'}\n실행결과(stdout):\n${runOut || '(없음)'}\n요청: 원인 분석과 수정 가이드를 단계적으로 제공` }
+        ];
+        try {
+          const res = await ai.chat({ model: cfg.ollama.modelPrimary, messages, stream: false });
+          const txt = res?.message?.content || res?.content || '';
+          console.log('\n--- AI 분석 ---');
+          console.log(txt);
+        } catch (e) {
+          console.log(`AI 분석 실패: ${e.message}`);
         }
-      } catch (err) {
-        console.error(chalk.red(String(err?.message || err)));
-        process.exitCode = 1;
       }
     });
 };
-
-function runFile(file, lang, runArgs, timeoutSec) {
-  const cmd = runCmdFor(lang, file, runArgs);
-  return new Promise((resolve) => {
-    const child = cp.spawn(cmd.command, cmd.args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-    let stdout = '', stderr = '';
-    child.stdout.on('data', (d) => (stdout += d.toString()));
-    child.stderr.on('data', (d) => (stderr += d.toString()));
-    child.on('close', () => resolve({ stdout, stderr }));
-    setTimeout(() => {
-      try { child.kill('SIGKILL'); } catch (_) {}
-      resolve({ stdout, stderr: stderr + '\nTIMEOUT' });
-    }, Math.max(1000, timeoutSec * 1000));
-  });
-}
-
-function runCmdFor(lang, file, runArgs) {
-  const extra = (runArgs || '').trim() ? (runArgs || '').trim().split(/\s+/) : [];
-  if (lang === 'python') return { command: 'python', args: ['-I', file, ...extra] };
-  if (lang === 'javascript' || lang === 'js') return { command: 'node', args: ['--no-warnings', file, ...extra] };
-  return { command: 'node', args: [file, ...extra] };
-}
 

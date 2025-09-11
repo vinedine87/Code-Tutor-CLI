@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const { ensureDirSafe, writeFileSafe } = require('../utils/fs');
 
@@ -27,7 +28,7 @@ function capitalizeJavaBase(name) {
 function boilerplate(lang, title = 'Example') {
   switch (lang) {
     case 'python':
-      return `# ${title}\n\n# 입력을 수정하여 실행해보세요\nnums = [3, 8, 2]\nprint(max(nums))\n`;
+      return `# ${title}\n\n# 예시: 최대값 출력\nnums = [3, 8, 2]\nprint(max(nums))\n`;
     case 'javascript':
     case 'js':
       return `// ${title}\n// 실행: node main.mjs\nconst nums = [3, 8, 2];\nconsole.log(Math.max(...nums));\n`;
@@ -44,7 +45,7 @@ function boilerplate(lang, title = 'Example') {
 
 async function createRunnableLesson({ outDir, title, lang, explanation, baseName = 'main' }) {
   const fileName = mainFileFor(lang, baseName);
-  await ensureDirSafe(outDir);
+  if (!fs.existsSync(outDir)) await ensureDirSafe(outDir);
   await writeFileSafe(path.join(outDir, fileName), boilerplate(lang, title));
   const readme = `# ${title}\n\n${explanation || ''}\n\n## 실행\n- ${runHint(lang)}\n`;
   await writeFileSafe(path.join(outDir, 'README.md'), readme);
@@ -59,7 +60,7 @@ async function writeCodeFile(outDir, lang, title, baseName = 'main') {
 
 async function createRunnableBundle({ outDir, title, langs = [], explanation, baseName = 'main' }) {
   if (!Array.isArray(langs) || langs.length === 0) throw new Error('langs 배열이 필요합니다');
-  await ensureDirSafe(outDir);
+  if (!fs.existsSync(outDir)) await ensureDirSafe(outDir);
   const files = [];
   for (const l of langs) {
     const f = await writeCodeFile(outDir, l, title, baseName);

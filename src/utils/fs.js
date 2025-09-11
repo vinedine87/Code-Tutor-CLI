@@ -3,7 +3,10 @@ const fse = require('fs-extra');
 const path = require('path');
 
 function slugify(s) {
-  return s.toLowerCase().replace(/[^a-z0-9가-힣]+/gi, '-').replace(/^-+|-+$/g, '');
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣]+/gi, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function timestamp() {
