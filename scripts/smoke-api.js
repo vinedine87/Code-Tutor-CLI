@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const { HfInference } = require('@huggingface/inference');
+const { loadConfig } = require('../src/config');
 
 async function main() {
   const token = process.env.HF_API_TOKEN || '';
@@ -7,7 +8,9 @@ async function main() {
     console.log('[smoke:api] HF_API_TOKEN not set. Skipping API test (OK).');
     return;
   }
-  const model = process.env.CT_HF_MODEL || 'TinyLlama/TinyLlama-1.1B-Chat-v1.0';
+  // Align model selection with CLI config resolution
+  const cfg = loadConfig();
+  const model = process.env.CT_HF_MODEL || (cfg.huggingface && cfg.huggingface.modelPrimary) || 'TinyLlama/TinyLlama-1.1B-Chat-v1.0';
   const hf = new HfInference(token);
   console.log(`[smoke:api] calling Inference API: ${model}`);
   try {

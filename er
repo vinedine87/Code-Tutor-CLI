@@ -1,0 +1,7 @@
+$ npm run smoke:api
+
+> code-tutor-cli@0.2.4 smoke:api
+> node scripts/smoke-api.js
+
+[smoke:api] calling Inference API: Qwen/Qwen2-1.5B-Instruct
+[smoke:api] FAIL: An error occurred while fetching the blob
