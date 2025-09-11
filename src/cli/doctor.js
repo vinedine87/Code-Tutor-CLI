@@ -41,7 +41,7 @@ module.exports = (program) => {
           { role: 'user', content: `파일 경로: ${filepath}\n언어: ${options.lang}\n오류(stderr):\n${runErr || '(없음)'}\n실행결과(stdout):\n${runOut || '(없음)'}\n요청: 원인 분석과 수정 가이드를 단계적으로 제공` }
         ];
         try {
-          const res = await ai.chat({ model: cfg.provider === 'gemini' ? cfg.gemini.modelPrimary : cfg.ollama.modelPrimary, messages, stream: false });
+          const res = await ai.chat({ messages, stream: false });
           const txt = res?.message?.content || res?.content || '';
           console.log('\n--- AI 분석 ---');
           console.log(txt);

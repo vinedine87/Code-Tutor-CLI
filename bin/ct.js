@@ -14,11 +14,10 @@ require('../src/cli/doctor')(program);
 // Chat command
 program
   .command('chat')
-  .description('대화형 모드로 Code Tutor CLI를 사용합니다')
+  .description('대화형 모드로 Code Tutor CLI를 사용합니다 (온라인 전용: Hugging Face Inference)')
   .action(async () => {
     const startInteractiveMode = require('../src/cli/interactive');
-    return startInteractiveMode();
+    return startInteractiveMode('huggingface');
   });
 
 program.parse(process.argv);
-

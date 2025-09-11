@@ -5,23 +5,23 @@ const { createAI } = require('../ai/provider');
 
 function banner() {
   if (String(process.env.CT_NO_ASCII || '').toLowerCase() === '1' || String(process.env.CT_NO_ASCII || '').toLowerCase() === 'true') {
-    console.log(chalk.yellowBright.bold('\nCode Tutor CLI'));
-    console.log(chalk.yellowBright.bold('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
-    console.log(chalk.yellowBright.bold('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18\n'));
+    console.log(chalk.bgYellow.black.bold('\n Code Tutor '));
+    console.log(chalk.bgYellow.black.bold(' 도움말: /help   모드 변경: /mode   종료: exit '));
+    console.log(chalk.bgYellow.black.bold(' 모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반 '));
+    console.log();
     return;
   }
   const title = String.raw`
-   _____   ____   _____   ______  _______  _______  _______   _______   ______  _      _____
-  / ____| / __ \ |  __ \ |  ____||__   __||  __ \ \|__   __| |__   __| |  ____|| |    / ____|
- | |     | |  | || |  | || |__      | |   | |  | |   | |       | |    | |__   | |   | (___  
- | |     | |  | || |  | ||  __|     | |   | |  | |   | |       | |    |  __|  | |    \___ \ 
- | |____ | |__| || |__| || |____    | |   | |__| |   | |       | |    | |____ | |____ ____) |
-  \_____| \____/ |_____/ |______|   |_|   |_____/    |_|       |_|    |______||______|_____/ 
-                                   CODE  TUTOR  CLI                                           `;
-  console.log('\n' + chalk.yellowBright.bold(title));
-  console.log(chalk.yellowBright.bold('Code Tutor CLI'));
-  console.log(chalk.yellowBright.bold('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
-  console.log(chalk.yellowBright.bold('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18'));
+   CCCCC   OOOOO    DDDDD    EEEEE           TTTTT    U   U    TTTTT    OOOOO    RRRRR 
+  C     C O     O   D    D   E                 T      U   U      T     O     O   R    R
+  C       O     O   D     D  EEEE              T      U   U      T     O     O   RRRRR 
+  C       O     O   D     D  E                 T      U   U      T     O     O   R   R 
+  C     C O     O   D    D   E                 T      U   U      T     O     O   R    R
+   CCCCC   OOOOO    DDDDD    EEEEE             T       UUU       T      OOOOO    R     R`;
+  console.log('\n' + chalk.bgYellow.black.bold(title));
+  console.log(chalk.bgYellow.black.bold(' Code Tutor '));
+  console.log(chalk.bgYellow.black.bold(' 도움말: /help   모드 변경: /mode   종료: exit '));
+  console.log(chalk.bgYellow.black.bold(' 모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반 '));
   console.log();
 }
 
@@ -48,9 +48,9 @@ function resolveMode(input) {
 async function ensureFirstRunConfig(cfg, providerOverride) {
   if (hasUserConfig()) return cfg;
   try {
-    const next = { ...cfg, provider: providerOverride || 'transformers' };
+    const next = { ...cfg, provider: providerOverride || 'huggingface' };
+    // 최초 실행 시에도 설정 저장 안내 문구는 표시하지 않습니다.
     saveUserConfig(next);
-    console.log('\n[\uC124\uC815 \uC800\uC7A5] ~/.codetutor/config.json \uC5D0 \uAE30\uBCF8 \uC124\uC815\uC744 \uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4.');
     return next;
   } catch (_) {
     return cfg;
@@ -89,8 +89,8 @@ async function startInteractiveMode(providerOverride) {
     history.push({ role: 'system', content: currentMode.system });
     rl.setPrompt(`ct[${currentMode.key}] > `);
     console.log(`\n[${currentMode.name}] \uBAA8\uB4DC\uAC00 \uC2DC\uC791\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`);
-    console.log('\uB3C4\uC6C0\uB9D0: /help, \uBAA8\uB4DC \uBCC0\uACBD: /mode, \uC885\uB8CC: exit');
-    console.log('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18\n');
+    console.log(chalk.bgYellow.black.bold(' 도움말: /help   모드 변경: /mode   종료: exit '));
+    console.log(chalk.bgYellow.black.bold(' 모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반 '));
     rl.prompt();
   }
 
@@ -222,9 +222,7 @@ async function startInteractiveMode(providerOverride) {
 
     try {
       const res = await ai.chat({
-        model: (cfg.provider === 'gemini') ? cfg.gemini.modelPrimary
-          : (cfg.provider === 'transformers') ? cfg.transformers.modelPrimary
-          : (cfg.transformers && cfg.transformers.modelPrimary) || 'Xenova/Qwen2-0.5B-Instruct',
+        model: cfg.huggingface && cfg.huggingface.modelPrimary,
         messages: history,
         stream: false
       });
@@ -232,24 +230,7 @@ async function startInteractiveMode(providerOverride) {
       history.push({ role: 'assistant', content: assistant });
       console.log(`\n${assistant}\n`);
     } catch (err) {
-      if (cfg.provider !== 'transformers') {
-        try {
-          console.log('\n[\uC790\uB3D9 \uC804\uD658] \uC751\uB2F5 \uC2E4\uD328\uB85C \uB0B4\uC7A5 \uBAA8\uB378\uB85C \uC804\uD658 \uD6C4 \uC7AC\uC2DC\uB3C4\uD569\uB2C8\uB2E4.');
-          cfg.provider = 'transformers';
-          saveUserConfig(cfg);
-          ai = createAI(cfg);
-          const res2 = await ai.chat({
-            model: cfg.transformers.modelPrimary,
-            messages: history,
-            stream: false
-          });
-          const assistant2 = res2?.message?.content || res2?.content || JSON.stringify(res2);
-          history.push({ role: 'assistant', content: assistant2 });
-          console.log(`\n${assistant2}\n`);
-          rl.prompt();
-          return;
-        } catch (_) {}
-      }
+      // 온라인 전용: 실패 시 즉시 오류 메시지를 안내하고 템플릿만 제한적으로 제공
       let fallback = '';
       const lower = text.toLowerCase();
       if (lower.includes('\uAD6C\uAD6C') || lower.includes('gugu')) {
@@ -260,7 +241,8 @@ for i in range(1, 10):
         line.append(f"{i} x {j} = {i*j}")
     print('   '.join(line))`;
       } else {
-        fallback = `[\uC624\uD504\uB77C\uC778] ${(currentMode?.name || '')} \uBAA8\uB4DC \uC751\uB2F5: ${text}`.trim();
+        const errMsg = (err && err.message) ? `\n[오류] ${err.message}` : '';
+        fallback = `[온라인 오류] ${(currentMode?.name || '')} 모드 응답 불가: ${text}${errMsg}`.trim();
       }
       history.push({ role: 'assistant', content: fallback });
       console.log(`\n${fallback}\n`);

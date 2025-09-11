@@ -1,0 +1,12 @@
+{
+  "id": "20250911-2311-파이썬",
+  "title": "파이썬",
+  "level": "elem",
+  "lang": "python",
+  "tests": [
+    {
+      "input": "3\n1 2 3\n",
+      "output": "3"
+    }
+  ]
+}

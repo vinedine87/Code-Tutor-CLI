@@ -1,2 +1,17 @@
 #!/usr/bin/env node
-// ¼³Ä¡ ÈÄ º°µµ ¾È³» ¾øÀ½. Ã¹ ½ÇÇà ½Ã ³»Àå ¸ðµ¨À» ÀÚµ¿ ´Ù¿î·ÎµåÇÕ´Ï´Ù.
+// Postinstall notice: brief setup hint for Hugging Face token.
+try {
+  const lines = [
+    '',
+    '[Code Tutor CLI] ì˜¨ë¼ì¸ ì‚¬ìš©ì„ ìœ„í•´ HF_API_TOKENì„ ì„¤ì •í•˜ì„¸ìš”.',
+    '- ë°œê¸‰: https://huggingface.co/settings/tokens (Read ê¶Œí•œ)',
+    '- ì˜ˆ: Windows Git Bash  => export HF_API_TOKEN="hf_xxx"',
+    '      PowerShell       => setx HF_API_TOKEN "hf_xxx" (ìƒˆ í„°ë¯¸ë„)',
+    '      macOS/Linux(zsh) => echo "export HF_API_TOKEN=hf_xxx" >> ~/.zshrc',
+    ''
+  ];
+  console.log(lines.join('\n'));
+} catch (_) {
+  // ignore
+}
+

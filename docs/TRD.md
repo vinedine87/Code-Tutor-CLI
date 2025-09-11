@@ -7,19 +7,16 @@
 - IDE: Cursor (AI 코드 어시스트 + GitHub 연동)
 
 ## 2. AI 모델 선택
-- 기본 모델(로컬/무료 우선)
-  - Qwen2-7B: 한국어 이해력 우수, 학생 학습용 적합
-  - Llama 3 8B: 범용성, Ollama에서 쉽게 실행
-- 코드 생성 보조
-  - StarCoder2-7B: 코드 생성/설명 최적화
+- 온라인 추론(Hugging Face Inference) 기반
+  - 예시: HuggingFaceH4/zephyr-7b-beta, Llama 3 Instruct, Gemma 2 IT 등
+  - 한국어 지원 모델을 우선 고려
 
 ## 3. 실행 환경
-- Ollama 로컬 모델 실행(Windows/Linux/macOS)
-- Node.js에서 axios로 로컬 REST API 호출
+- Hugging Face Inference API 호출(Node.js 공식 SDK 사용)
 
 ## 4. 명령 개요
 - tutor: 자연어 → 코드 예시 + 난이도별 해설, 선택적으로 실행 파일 생성
 - quest: 문제팩 생성/실행(자동 채점)
 - doctor: 실행 실패 로그 기반 원인 분석 및 수정 가이드
-- models: 로컬 모델 목록 조회, pull 안내
+- models: (삭제) 온라인 전용으로 단순화
 

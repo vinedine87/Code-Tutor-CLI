@@ -1,17 +1,8 @@
-const { createGeminiClient } = require('./gemini');
-const { createLocalClient } = require('./local');
-
 function createAI(cfg) {
-  const provider = (cfg.provider || 'transformers').toLowerCase();
-  if (provider === 'gemini') return createGeminiClient(cfg);
-  if (provider === 'transformers') {
-    const { createTransformersClient } = require('./transformers');
-    return createTransformersClient(cfg);
-  }
-  if (provider === 'local') return createLocalClient(cfg);
-  // 기본은 transformers
-  const { createTransformersClient } = require('./transformers');
-  return createTransformersClient(cfg);
+  const provider = (cfg.provider || 'huggingface').toLowerCase();
+  const { createHuggingFaceClient } = require('./huggingface');
+  // 온라인 전용: 기본/유일 제공자는 huggingface
+  return createHuggingFaceClient({ ...cfg, provider: 'huggingface' });
 }
 
 module.exports = { createAI };
