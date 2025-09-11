@@ -1,12 +1,22 @@
 const readline = require('readline');
+const chalk = require('chalk');
 const { loadConfig, saveUserConfig, hasUserConfig } = require('../config');
 const { createAI } = require('../ai/provider');
 
 function banner() {
-  console.log('============================================');
-  console.log(' Code Tutor CLI - 대화 모드');
-  console.log(' 종료: exit   모드 변경: /mode   도움말: /help');
-  console.log('============================================\n');
+  const title = [
+    '  _________          __          __________          __               ',
+    ' /   _____/  ____  _/  |_  ____  \\______   \\ _____ _/  |_  ____  ____ ',
+    ' \\_____  \\ _/ __ \\ \\   __\\/  _ \\  |       _// __  \\   __\\/  _ \\/  _ \\\',
+    ' /        \\\\  ___/  |  | (  <_> ) |    |   \\\\  ___/ |  | (  <_> |  <_> )',
+    '/_______  / \\___  > |__|  \\____/  |____|_  / \\___  >|__|  \\____/ \\____/ ',
+    '        \\/      \\/                         \\/      \\/                   ',
+  ].join('\n');
+  console.log('\n' + chalk.yellow(title));
+  console.log(chalk.yellow('WELCOME TO CODE TUTOR CLI'));
+  console.log(chalk.yellow('도움말: /help   모드 변경: /mode   종료: exit'));
+  console.log(chalk.yellow('모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반'));
+  console.log();
 }
 
 function modeMap() {
@@ -59,13 +69,12 @@ async function ensureFirstRunConfig(cfg, providerOverride) {
       ]);
       next.gemini = { ...cfg.gemini, modelPrimary: gemAns.modelPrimary, apiKey: gemAns.apiKey || cfg.gemini.apiKey };
     } else if (provider === 'transformers') {
-      // 기본값 유지: Qwen2-0.5B-Instruct
       next.transformers = { ...cfg.transformers };
     } else if (provider === 'local') {
       next.local = { ...cfg.local };
     }
     saveUserConfig(next);
-    console.log(`\n[설정 저장] ~/.codetutor/config.json 에 기본 설정을 저장했습니다.`);
+    console.log('\n[설정 저장] ~/.codetutor/config.json 에 기본 설정을 저장했습니다.');
     return next;
   } catch (_) {
     return cfg;
@@ -119,9 +128,9 @@ async function startInteractiveMode(providerOverride) {
     history.push({ role: 'system', content: currentMode.system });
     rl.setPrompt(`ct[${currentMode.key}] > `);
     console.log(`\n[${currentMode.name}] 모드가 시작되었습니다.`);
-    console.log('도움말: /help, 모드 변경: /mode, 종료: exit\n');
+    console.log('도움말: /help, 모드 변경: /mode, 종료: exit');
+    console.log('모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반\n');
 
-    // 안내: transformers는 첫 실행 시 모델 자동 다운로드
     if (cfg.provider === 'transformers') {
       console.log('참고: 첫 실행 시 모델 가중치를 자동 다운로드합니다(네트워크 필요).');
     }
@@ -160,7 +169,7 @@ async function startInteractiveMode(providerOverride) {
       history.push({ role: 'assistant', content: assistant });
       console.log(`\n${assistant}\n`);
     } catch (err) {
-      // 1회 자동 전환 시도 후 재시도
+      // 비정상 실패 시 1회 내장 모델로 전환 후 재시도
       if (cfg.provider !== 'transformers') {
         try {
           console.log('\n[자동 전환] 응답 실패로 내장 모델로 전환 후 재시도합니다.');
@@ -178,10 +187,10 @@ async function startInteractiveMode(providerOverride) {
           rl.prompt();
           return;
         } catch (_) {
-          // fall through to template fallback
+          // 아래 템플릿으로 폴백
         }
       }
-      // 실패 시 템플릿 보조(예: 구구단, 오타 포함)
+      // 템플릿 폴백(예: 구구단, 오타 포함)
       let fallback = '';
       const lower = text.toLowerCase();
       if (lower.includes('구구') || lower.includes('gugu')) {
@@ -224,3 +233,4 @@ for i in range(1, 10):
 }
 
 module.exports = startInteractiveMode;
+
