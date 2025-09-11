@@ -1,6 +1,6 @@
 {
   "name": "code-tutor-cli",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Code Tutor CLI: 학습/연습/도우미 도구 (Hugging Face Inference 연동)",
   "keywords": [
     "cli",
