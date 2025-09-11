@@ -42,7 +42,7 @@ function loadConfig() {
     provider: 'huggingface',
     huggingface: {
       apiToken: process.env.HF_API_TOKEN || '',
-      modelPrimary: process.env.CT_HF_MODEL || 'HuggingFaceH4/zephyr-7b-beta',
+      modelPrimary: process.env.CT_HF_MODEL || 'Qwen/Qwen2-7B-Instruct',
       maxNewTokens: Number(process.env.CT_HF_MAX_TOKENS || 256),
       temperature: Number(process.env.CT_HF_TEMPERATURE || 0.7)
     },

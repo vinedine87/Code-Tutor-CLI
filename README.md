@@ -35,7 +35,7 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 {
   "provider": "huggingface",
   "huggingface": {
-    "modelPrimary": "HuggingFaceH4/zephyr-7b-beta",
+    "modelPrimary": "Qwen/Qwen2-7B-Instruct",
     "maxNewTokens": 256,
     "temperature": 0.7
   }
@@ -45,6 +45,12 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 ## 참고
 
 - 네트워크 상태 및 모델/요청 크기에 따라 응답 시간이 달라질 수 있습니다.
+
+## 릴리즈/검증(개발자용)
+
+- 버전/파일 검증: `npm run smoke` (CLI 진입/의존성 확인)
+- API 스모크: `HF_API_TOKEN=... npm run smoke:api` (토큰 없으면 자동 스킵)
+- 배포 전 점검: `npm run prepublishOnly` (필수 파일/의존성 정책 검사)
 
 ## Windows(Git Bash, MINGW64) 설치/실행 순서
 
