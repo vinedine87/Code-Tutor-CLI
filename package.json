@@ -1,6 +1,6 @@
 {
   "name": "code-tutor-cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Code Tutor CLI: 학습/연습/도우미 도구 (Ollama 연동)",
   "keywords": [
     "cli",
