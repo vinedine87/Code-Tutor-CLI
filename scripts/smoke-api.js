@@ -7,7 +7,7 @@ async function main() {
     console.log('[smoke:api] HF_API_TOKEN not set. Skipping API test (OK).');
     return;
   }
-  const model = process.env.CT_HF_MODEL || 'Qwen/Qwen2-7B-Instruct';
+  const model = process.env.CT_HF_MODEL || 'TinyLlama/TinyLlama-1.1B-Chat-v1.0';
   const hf = new HfInference(token);
   console.log(`[smoke:api] calling Inference API: ${model}`);
   try {
@@ -25,4 +25,3 @@ async function main() {
 }
 
 main();
-

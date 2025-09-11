@@ -35,7 +35,7 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 {
   "provider": "huggingface",
   "huggingface": {
-    "modelPrimary": "Qwen/Qwen2-7B-Instruct",
+    "modelPrimary": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     "maxNewTokens": 256,
     "temperature": 0.7
   }

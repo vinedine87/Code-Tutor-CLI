@@ -24,7 +24,7 @@
 - `docs/` — PRD/TRD/PROMPTS 문서
 
 ## Behavior
-- Chat: 온라인 전용(HF), 폴백 없음. 모델은 설정의 `huggingface.modelPrimary` 사용
+- Chat: 온라인 전용(HF), 폴백 없음. 기본 모델은 `TinyLlama/TinyLlama-1.1B-Chat-v1.0`(환경변수 `CT_HF_MODEL`로 재정의 가능)
 - Doctor: 실행 결과/오류 수집 후 AI 설명(온라인)
 - Quest: `quest new/run` 그대로 유지, 파일 쓰기는 `quests/` 하위
 
@@ -44,4 +44,3 @@
 - 파일 생성 기본 출력 경로: `lessons/`, `quests/`
 - 경로 존재 시 중단(명시적 overwrite 처리 시에만 비움)
 - 실행 타임아웃 지정, 네트워크 실패 시 사용자 친화적 오류
-

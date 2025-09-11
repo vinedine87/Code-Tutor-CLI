@@ -17,7 +17,7 @@ function createHuggingFaceClient(cfg) {
   const hf = new HfInference(token || undefined);
 
   async function chat({ model, messages, stream = false, options = {} }) {
-    const mdl = model || cfg.huggingface?.modelPrimary || 'Qwen/Qwen2-7B-Instruct';
+    const mdl = model || cfg.huggingface?.modelPrimary || 'TinyLlama/TinyLlama-1.1B-Chat-v1.0';
     const prompt = messagesToPrompt(messages);
     const max_new_tokens = options.max_new_tokens || cfg.huggingface?.maxNewTokens || 256;
     const temperature = options.temperature ?? cfg.huggingface?.temperature ?? 0.7;
@@ -31,7 +31,7 @@ function createHuggingFaceClient(cfg) {
   }
 
   async function generate({ model, prompt, stream = false, options = {} }) {
-    const mdl = model || cfg.huggingface?.modelPrimary || 'Qwen/Qwen2-7B-Instruct';
+    const mdl = model || cfg.huggingface?.modelPrimary || 'TinyLlama/TinyLlama-1.1B-Chat-v1.0';
     const max_new_tokens = options.max_new_tokens || cfg.huggingface?.maxNewTokens || 256;
     const temperature = options.temperature ?? cfg.huggingface?.temperature ?? 0.7;
     const res = await hf.textGeneration({
@@ -45,7 +45,7 @@ function createHuggingFaceClient(cfg) {
 
   async function listModels() {
     // 간단히 기본 모델 힌트만 반환
-    return [{ name: cfg.huggingface?.modelPrimary || 'Qwen/Qwen2-7B-Instruct' }];
+    return [{ name: cfg.huggingface?.modelPrimary || 'TinyLlama/TinyLlama-1.1B-Chat-v1.0' }];
   }
 
   return { chat, generate, listModels };
