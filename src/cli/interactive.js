@@ -1,6 +1,6 @@
 const readline = require('readline');
-const { loadConfig } = require('../config');
-const { createClient } = require('../ai/ollama');
+const { loadConfig, saveUserConfig, hasUserConfig } = require('../config');
+const { createAI } = require('../ai/provider');
 
 function banner() {
   console.log('============================================');
@@ -34,9 +34,59 @@ function resolveMode(input) {
   return null;
 }
 
-function startInteractiveMode() {
-  const cfg = loadConfig();
-  const ollama = createClient(cfg);
+async function ensureFirstRunConfig(cfg, providerOverride) {
+  if (hasUserConfig()) return cfg;
+  // Prompt for provider and model only on first run (no user config file)
+  try {
+    const inquirer = require('inquirer');
+    let provider = providerOverride || cfg.provider || 'ollama';
+    if (!providerOverride) {
+      const ans1 = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'provider',
+          message: '어떤 모델 제공자를 사용할까요?',
+          choices: [
+            { name: 'Ollama (로컬 서버, 권장)', value: 'ollama' },
+            { name: 'Gemini (Google API 키 필요)', value: 'gemini' },
+            { name: 'Local (node-llama-cpp, 자동 모델 다운로드)', value: 'local' }
+          ],
+          default: 'ollama'
+        }
+      ]);
+      provider = ans1.provider;
+    }
+
+    const next = { ...cfg, provider };
+    if (provider === 'ollama') {
+      const { modelPrimary } = await inquirer.prompt([
+        { type: 'input', name: 'modelPrimary', message: '기본 Ollama 모델 태그:', default: cfg.ollama.modelPrimary || 'qwen2:7b' }
+      ]);
+      next.ollama = { ...cfg.ollama, modelPrimary };
+    } else if (provider === 'gemini') {
+      const gemAns = await inquirer.prompt([
+        { type: 'input', name: 'modelPrimary', message: '기본 Gemini 모델:', default: cfg.gemini.modelPrimary || 'gemini-1.5-flash' },
+        { type: 'password', name: 'apiKey', message: 'GEMINI_API_KEY (건너뛰려면 Enter):', mask: '*' }
+      ]);
+      next.gemini = { ...cfg.gemini, modelPrimary: gemAns.modelPrimary, apiKey: gemAns.apiKey || cfg.gemini.apiKey };
+    } else if (provider === 'local') {
+      // Use defaults; local provider auto-downloads when needed
+      next.local = { ...cfg.local };
+    }
+    saveUserConfig(next);
+    console.log(`\n[설정 저장] ~/.codetutor/config.json 에 기본 설정을 저장했습니다.`);
+    return next;
+  } catch (_) {
+    // Fallback to defaults when inquirer not available
+    return cfg;
+  }
+}
+
+async function startInteractiveMode(providerOverride) {
+  let cfg = loadConfig();
+  cfg = await ensureFirstRunConfig(cfg, providerOverride);
+  if (providerOverride) cfg.provider = providerOverride;
+  const ai = createAI(cfg);
   const history = [];
   let currentMode = null;
 
@@ -86,11 +136,17 @@ function startInteractiveMode() {
     console.log('예) 파이썬으로 리스트 최대값 구하는 방법 알려줘\n');
     // 연결 점검: ollama 모델 목록 시도
     try {
-      await ollama.listModels();
+      if (cfg.provider === 'ollama') {
+        await ai.listModels();
+      }
     } catch (_) {
-      console.log('참고: Ollama 연결이 필요합니다. 설치/실행 가이드:');
-      console.log(" - 서버 실행: 'ollama serve'");
-      console.log(" - 기본 모델 받기: 'ollama pull qwen2:7b'\n");
+      if (cfg.provider === 'ollama') {
+        console.log('참고: Ollama 연결이 필요합니다. 설치/실행 가이드:');
+        console.log(" - 서버 실행: 'ollama serve'");
+        console.log(" - 기본 모델 받기: 'ollama pull qwen2:7b'\n");
+      } else if (cfg.provider === 'gemini') {
+        console.log('참고: GEMINI_API_KEY 환경변수를 설정하세요. 모델 기본값 gemini-1.5-flash');
+      }
     }
     rl.prompt();
   }
@@ -116,8 +172,10 @@ function startInteractiveMode() {
     history.push({ role: 'user', content: text });
 
     try {
-      const res = await ollama.chat({
-        model: cfg.ollama.modelPrimary,
+      const res = await ai.chat({
+        model: (cfg.provider === 'gemini') ? cfg.gemini.modelPrimary
+          : (cfg.provider === 'transformers') ? (cfg.transformers && cfg.transformers.modelPrimary) || 'Xenova/Qwen2-0.5B-Instruct'
+          : cfg.ollama.modelPrimary,
         messages: history,
         stream: false
       });

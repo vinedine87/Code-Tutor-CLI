@@ -1,6 +1,6 @@
 const path = require('path');
 const { loadConfig } = require('../config');
-const { createClient } = require('../ai/ollama');
+const { createAI } = require('../ai/provider');
 const { buildTutorMessages } = require('../tutor/prompt');
 const { slugify, timestamp, writeFileSafe, ensureDirSafe } = require('../utils/fs');
 const { createRunnableLesson, createRunnableBundle } = require('../generate/codegen');
@@ -17,7 +17,7 @@ module.exports = (program) => {
     .option('--no-ai', 'AI 호출 없이 파일만 생성')
     .action(async (question, options) => {
       const cfg = loadConfig();
-      const ollama = createClient(cfg);
+      const ai = createAI(cfg);
       const baseDir = path.join('lessons', `${timestamp()}-${slugify(question)}`);
       const outDir = await ensureUniqueDir(baseDir);
       const langs = resolveLangs(options.langs, options.lang);
@@ -25,7 +25,7 @@ module.exports = (program) => {
       if (!options.noAi) {
         try {
           const messages = buildTutorMessages({ question, level: options.level, lang: langs[0] });
-          const res = await ollama.chat({ model: cfg.ollama.modelPrimary, messages, stream: false });
+          const res = await ai.chat({ model: cfg.provider === 'gemini' ? cfg.gemini.modelPrimary : cfg.ollama.modelPrimary, messages, stream: false });
           aiText = res?.message?.content || res?.content || '';
         } catch (e) {
           aiText = `AI 연결 실패: ${e.message}`;

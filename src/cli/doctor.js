@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { spawnSync } = require('child_process');
 const { loadConfig } = require('../config');
-const { createClient } = require('../ai/ollama');
+const { createAI } = require('../ai/provider');
 
 module.exports = (program) => {
   program
@@ -35,13 +35,13 @@ module.exports = (program) => {
 
       if (options.explain) {
         const cfg = loadConfig();
-        const ai = createClient(cfg);
+        const ai = createAI(cfg);
         const messages = [
           { role: 'system', content: '당신은 친절한 시니어 코드 리뷰어입니다. 오류를 찾아 설명하고 수정안을 제시하세요.' },
           { role: 'user', content: `파일 경로: ${filepath}\n언어: ${options.lang}\n오류(stderr):\n${runErr || '(없음)'}\n실행결과(stdout):\n${runOut || '(없음)'}\n요청: 원인 분석과 수정 가이드를 단계적으로 제공` }
         ];
         try {
-          const res = await ai.chat({ model: cfg.ollama.modelPrimary, messages, stream: false });
+          const res = await ai.chat({ model: cfg.provider === 'gemini' ? cfg.gemini.modelPrimary : cfg.ollama.modelPrimary, messages, stream: false });
           const txt = res?.message?.content || res?.content || '';
           console.log('\n--- AI 분석 ---');
           console.log(txt);

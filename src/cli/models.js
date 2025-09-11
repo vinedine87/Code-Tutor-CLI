@@ -1,5 +1,5 @@
 const { loadConfig } = require('../config');
-const { createClient } = require('../ai/ollama');
+const { createAI } = require('../ai/provider');
 const { spawn } = require('child_process');
 
 module.exports = (program) => {
@@ -10,7 +10,12 @@ module.exports = (program) => {
     .option('--pull <modelName>', 'Ollama 모델을 다운로드(ollama pull 호출)')
     .action(async (options) => {
       const cfg = loadConfig();
-      const client = createClient(cfg);
+      if (cfg.provider !== 'ollama') {
+        console.log('현재 프로바이더에서는 models 명령이 지원되지 않습니다. Ollama 전용입니다.');
+        console.log("환경변수 CT_PROVIDER=ollama 로 전환하거나 'ct chat'에서 바로 사용하세요.");
+        return;
+      }
+      const client = createAI(cfg);
       if (options.list) {
         try {
           const models = await client.listModels();
@@ -42,4 +47,3 @@ module.exports = (program) => {
       console.log('사용법: ct models --list | --pull <model>');
     });
 };
-
