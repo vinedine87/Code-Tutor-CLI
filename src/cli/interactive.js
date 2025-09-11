@@ -4,28 +4,33 @@ const { loadConfig, saveUserConfig, hasUserConfig } = require('../config');
 const { createAI } = require('../ai/provider');
 
 function banner() {
-  const title = [
-    '  _________          __          __________          __               ',
-    ' /   _____/  ____  _/  |_  ____  \\______   \\ _____ _/  |_  ____  ____ ',
-    ' \\_____  \\ _/ __ \\ \\   __\\/  _ \\  |       _// __  \\   __\\/  _ \\/  _ \\\',
-    ' /        \\\\  ___/  |  | (  <_> ) |    |   \\\\  ___/ |  | (  <_> |  <_> )',
-    '/_______  / \\___  > |__|  \\____/  |____|_  / \\___  >|__|  \\____/ \\____/ ',
-    '        \\/      \\/                         \\/      \\/                   ',
-  ].join('\n');
+  if (String(process.env.CT_NO_ASCII || '').toLowerCase() === '1' || String(process.env.CT_NO_ASCII || '').toLowerCase() === 'true') {
+    console.log(chalk.yellow('\nCode Tutor CLI'));
+    console.log(chalk.yellow('����: /help   ��� ����: /mode   ����: exit'));
+    console.log(chalk.yellow('��� �ȳ�: 1) �ʵ��л�  2) ���л�  3) �����л�  4) ���л�  5) �Ϲ�\n'));
+    return;
+  }
+  const title = String.raw`
+  _________          __          __________          __               
+ /   _____/  ____  _/  |_  ____  \______   \ _____ _/  |_  ____  ____ 
+ \_____  \ _/ __ \ \   __\\/  _ \  |       _// __  \\   __\\/  _ \\/  _ \
+ /        \\  ___/  |  | (  <_> ) |    |   \\  ___/ |  | (  <_> |  <_> )
+/_______  / \___  > |__|  \____/  |____|_  / \___  >|__|  \____/ \____/ 
+        \/      \/                         \/      \/                   `;
   console.log('\n' + chalk.yellow(title));
   console.log(chalk.yellow('WELCOME TO CODE TUTOR CLI'));
-  console.log(chalk.yellow('도움말: /help   모드 변경: /mode   종료: exit'));
-  console.log(chalk.yellow('모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반'));
+  console.log(chalk.yellow('����: /help   ��� ����: /mode   ����: exit'));
+  console.log(chalk.yellow('��� �ȳ�: 1) �ʵ��л�  2) ���л�  3) �����л�  4) ���л�  5) �Ϲ�'));
   console.log();
 }
 
 function modeMap() {
   return {
-    1: { key: 'elem', name: '초등학생', system: '당신은 초등학생을 위한 친절한 코딩 튜터입니다. 쉬운 비유와 짧은 코드 예제로 설명하세요.' },
-    2: { key: 'middle', name: '중학생', system: '당신은 중학생을 위한 코딩 튜터입니다. 기본 문법과 개념을 차근차근 설명하세요.' },
-    3: { key: 'high', name: '고등학생', system: '당신은 고등학생을 위한 코딩 튜터입니다. 알고리즘과 자료구조의 기초를 예제로 설명하세요.' },
-    4: { key: 'college', name: '대학생', system: '당신은 대학생을 위한 코딩 튜터입니다. 개념을 명확히 하고 복잡도를 함께 고려해 설명하세요.' },
-    5: { key: 'adult', name: '일반', system: '당신은 실무 친화적인 코딩 코치입니다. 모범 코드 중심으로 간결하게 안내하세요.' }
+    1: { key: 'elem', name: '초등?�생', system: '?�신?� 초등?�생???�한 친절??코딩 ?�터?�니?? ?�운 비유?� 짧�? 코드 ?�제�??�명?�세??' },
+    2: { key: 'middle', name: '중학??, system: '?�신?� 중학?�을 ?�한 코딩 ?�터?�니?? 기본 문법�?개념??차근차근 ?�명?�세??' },
+    3: { key: 'high', name: '고등?�생', system: '?�신?� 고등?�생???�한 코딩 ?�터?�니?? ?�고리즘�??�료구조??기초�??�제�??�명?�세??' },
+    4: { key: 'college', name: '?�?�생', system: '?�신?� ?�?�생???�한 코딩 ?�터?�니?? 개념??명확???�고 복잡?��? ?�께 고려???�명?�세??' },
+    5: { key: 'adult', name: '?�반', system: '?�신?� ?�무 친화?�인 코딩 코치?�니?? 모범 코드 중심?�로 간결?�게 ?�내?�세??' }
   };
 }
 
@@ -49,10 +54,10 @@ async function ensureFirstRunConfig(cfg, providerOverride) {
         {
           type: 'list',
           name: 'provider',
-          message: '어떤 모델 제공자를 사용할까요?',
+          message: '?�떤 모델 ?�공?��? ?�용?�까??',
           choices: [
-            { name: 'Transformers(내장, 자동 다운로드)', value: 'transformers' },
-            { name: 'Gemini(키 필요, 고급)', value: 'gemini' },
+            { name: 'Transformers(?�장, ?�동 ?�운로드)', value: 'transformers' },
+            { name: 'Gemini(???�요, 고급)', value: 'gemini' },
             { name: 'Local(node-llama-cpp, 고급)', value: 'local' }
           ],
           default: 'transformers'
@@ -65,7 +70,7 @@ async function ensureFirstRunConfig(cfg, providerOverride) {
     if (provider === 'gemini') {
       const gemAns = await inquirer.prompt([
         { type: 'input', name: 'modelPrimary', message: '기본 Gemini 모델:', default: cfg.gemini.modelPrimary || 'gemini-1.5-flash' },
-        { type: 'password', name: 'apiKey', message: 'GEMINI_API_KEY (건너뛰려면 Enter):', mask: '*' }
+        { type: 'password', name: 'apiKey', message: 'GEMINI_API_KEY (건너?�려�?Enter):', mask: '*' }
       ]);
       next.gemini = { ...cfg.gemini, modelPrimary: gemAns.modelPrimary, apiKey: gemAns.apiKey || cfg.gemini.apiKey };
     } else if (provider === 'transformers') {
@@ -74,7 +79,7 @@ async function ensureFirstRunConfig(cfg, providerOverride) {
       next.local = { ...cfg.local };
     }
     saveUserConfig(next);
-    console.log('\n[설정 저장] ~/.codetutor/config.json 에 기본 설정을 저장했습니다.');
+    console.log('\n[?�정 ?�?? ~/.codetutor/config.json ??기본 ?�정???�?�했?�니??');
     return next;
   } catch (_) {
     return cfg;
@@ -101,22 +106,22 @@ async function startInteractiveMode(providerOverride) {
     try {
       const inquirer = require('inquirer');
       const choices = [
-        { name: '1) 초등학생', value: '1' },
-        { name: '2) 중학생', value: '2' },
-        { name: '3) 고등학생', value: '3' },
-        { name: '4) 대학생', value: '4' },
-        { name: '5) 일반', value: '5' }
+        { name: '1) 초등?�생', value: '1' },
+        { name: '2) 중학??, value: '2' },
+        { name: '3) 고등?�생', value: '3' },
+        { name: '4) ?�?�생', value: '4' },
+        { name: '5) ?�반', value: '5' }
       ];
       const ans = await inquirer.prompt([
-        { type: 'list', name: 'mode', message: '모드 선택', choices }
+        { type: 'list', name: 'mode', message: '모드 ?�택', choices }
       ]);
       currentMode = resolveMode(ans.mode);
     } catch (_) {
       await new Promise((resolve) => {
-        rl.question('모드 선택 (1-5 입력): ', (ans) => {
+        rl.question('모드 ?�택 (1-5 ?�력): ', (ans) => {
           const m = resolveMode(ans);
           if (!m) {
-            console.log('유효하지 않은 입력입니다. 다시 선택하세요.\n');
+            console.log('?�효?��? ?��? ?�력?�니?? ?�시 ?�택?�세??\n');
             return resolve(askMode());
           }
           currentMode = m;
@@ -127,12 +132,12 @@ async function startInteractiveMode(providerOverride) {
     history.length = 0;
     history.push({ role: 'system', content: currentMode.system });
     rl.setPrompt(`ct[${currentMode.key}] > `);
-    console.log(`\n[${currentMode.name}] 모드가 시작되었습니다.`);
-    console.log('도움말: /help, 모드 변경: /mode, 종료: exit');
-    console.log('모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반\n');
+    console.log(`\n[${currentMode.name}] 모드가 ?�작?�었?�니??`);
+    console.log('?��?�? /help, 모드 변�? /mode, 종료: exit');
+    console.log('모드 ?�내: 1) 초등?�생  2) 중학?? 3) 고등?�생  4) ?�?�생  5) ?�반\n');
 
     if (cfg.provider === 'transformers') {
-      console.log('참고: 첫 실행 시 모델 가중치를 자동 다운로드합니다(네트워크 필요).');
+      console.log('참고: �??�행 ??모델 가중치�??�동 ?�운로드?�니???�트?�크 ?�요).');
     }
     rl.prompt();
   }
@@ -169,10 +174,9 @@ async function startInteractiveMode(providerOverride) {
       history.push({ role: 'assistant', content: assistant });
       console.log(`\n${assistant}\n`);
     } catch (err) {
-      // 비정상 실패 시 1회 내장 모델로 전환 후 재시도
-      if (cfg.provider !== 'transformers') {
+      // 비정???�패 ??1???�장 모델�??�환 ???�시??      if (cfg.provider !== 'transformers') {
         try {
-          console.log('\n[자동 전환] 응답 실패로 내장 모델로 전환 후 재시도합니다.');
+          console.log('\n[?�동 ?�환] ?�답 ?�패�??�장 모델�??�환 ???�시?�합?�다.');
           cfg.provider = 'transformers';
           saveUserConfig(cfg);
           ai = createAI(cfg);
@@ -187,21 +191,21 @@ async function startInteractiveMode(providerOverride) {
           rl.prompt();
           return;
         } catch (_) {
-          // 아래 템플릿으로 폴백
+          // ?�래 ?�플릿으�??�백
         }
       }
-      // 템플릿 폴백(예: 구구단, 오타 포함)
+      // ?�플�??�백(?? 구구?? ?��? ?�함)
       let fallback = '';
       const lower = text.toLowerCase();
       if (lower.includes('구구') || lower.includes('gugu')) {
-        fallback = `# 파이썬 구구단 (1~9)
+        fallback = `# ?�이??구구??(1~9)
 for i in range(1, 10):
     line = []
     for j in range(1, 10):
         line.append(f"{i} x {j} = {i*j}")
     print('   '.join(line))`;
       } else {
-        fallback = `[오프라인] ${currentMode?.name || ''} 모드 응답: ${text}`.trim();
+        fallback = `[?�프?�인] ${currentMode?.name || ''} 모드 ?�답: ${text}`.trim();
       }
       history.push({ role: 'assistant', content: fallback });
       console.log(`\n${fallback}\n`);
@@ -213,19 +217,19 @@ for i in range(1, 10):
     if (!currentMode) {
       const m = resolveMode(line);
       if (!m) {
-        console.log('유효하지 않은 입력입니다. 다시 선택하세요.\n');
+        console.log('?�효?��? ?��? ?�력?�니?? ?�시 ?�택?�세??\n');
         return askMode();
       }
       currentMode = m;
       history.length = 0;
       history.push({ role: 'system', content: m.system });
       rl.setPrompt(`ct[${m.key}] > `);
-      console.log(`\n[${m.name}] 모드가 시작되었습니다. 바로 질문을 입력하세요.\n`);
+      console.log(`\n[${m.name}] 모드가 ?�작?�었?�니?? 바로 질문???�력?�세??\n`);
       return rl.prompt();
     }
     handleUserInput(line);
   }).on('close', () => {
-    console.log('대화 모드를 종료합니다.\n');
+    console.log('?�??모드�?종료?�니??\n');
     process.exit(0);
   });
 
@@ -233,4 +237,3 @@ for i in range(1, 10):
 }
 
 module.exports = startInteractiveMode;
-
