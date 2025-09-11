@@ -6,31 +6,31 @@ const { createAI } = require('../ai/provider');
 function banner() {
   if (String(process.env.CT_NO_ASCII || '').toLowerCase() === '1' || String(process.env.CT_NO_ASCII || '').toLowerCase() === 'true') {
     console.log(chalk.yellow('\nCode Tutor CLI'));
-    console.log(chalk.yellow('µµ¿ò¸»: /help   ¸ðµå º¯°æ: /mode   Á¾·á: exit'));
-    console.log(chalk.yellow('¸ðµå ¾È³»: 1) ÃÊµîÇÐ»ý  2) ÁßÇÐ»ý  3) °íµîÇÐ»ý  4) ´ëÇÐ»ý  5) ÀÏ¹Ý\n'));
+    console.log(chalk.yellow('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
+    console.log(chalk.yellow('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18\n'));
     return;
   }
   const title = String.raw`
   _________          __          __________          __               
  /   _____/  ____  _/  |_  ____  \______   \ _____ _/  |_  ____  ____ 
- \_____  \ _/ __ \ \   __\\/  _ \  |       _// __  \\   __\\/  _ \\/  _ \
+ \_____  \ _/ __ \ \   __\/  _ \  |       _// __  \\   __\/  _ \/  _ \
  /        \\  ___/  |  | (  <_> ) |    |   \\  ___/ |  | (  <_> |  <_> )
 /_______  / \___  > |__|  \____/  |____|_  / \___  >|__|  \____/ \____/ 
         \/      \/                         \/      \/                   `;
   console.log('\n' + chalk.yellow(title));
   console.log(chalk.yellow('WELCOME TO CODE TUTOR CLI'));
-  console.log(chalk.yellow('µµ¿ò¸»: /help   ¸ðµå º¯°æ: /mode   Á¾·á: exit'));
-  console.log(chalk.yellow('¸ðµå ¾È³»: 1) ÃÊµîÇÐ»ý  2) ÁßÇÐ»ý  3) °íµîÇÐ»ý  4) ´ëÇÐ»ý  5) ÀÏ¹Ý'));
+  console.log(chalk.yellow('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
+  console.log(chalk.yellow('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18'));
   console.log();
 }
 
 function modeMap() {
   return {
-    1: { key: 'elem', name: 'ì´ˆë“±?™ìƒ', system: '?¹ì‹ ?€ ì´ˆë“±?™ìƒ???„í•œ ì¹œì ˆ??ì½”ë”© ?œí„°?…ë‹ˆ?? ?¬ìš´ ë¹„ìœ ?€ ì§§ì? ì½”ë“œ ?ˆì œë¡??¤ëª…?˜ì„¸??' },
-    2: { key: 'middle', name: 'ì¤‘í•™??, system: '?¹ì‹ ?€ ì¤‘í•™?ì„ ?„í•œ ì½”ë”© ?œí„°?…ë‹ˆ?? ê¸°ë³¸ ë¬¸ë²•ê³?ê°œë…??ì°¨ê·¼ì°¨ê·¼ ?¤ëª…?˜ì„¸??' },
-    3: { key: 'high', name: 'ê³ ë“±?™ìƒ', system: '?¹ì‹ ?€ ê³ ë“±?™ìƒ???„í•œ ì½”ë”© ?œí„°?…ë‹ˆ?? ?Œê³ ë¦¬ì¦˜ê³??ë£Œêµ¬ì¡°??ê¸°ì´ˆë¥??ˆì œë¡??¤ëª…?˜ì„¸??' },
-    4: { key: 'college', name: '?€?™ìƒ', system: '?¹ì‹ ?€ ?€?™ìƒ???„í•œ ì½”ë”© ?œí„°?…ë‹ˆ?? ê°œë…??ëª…í™•???˜ê³  ë³µìž¡?„ë? ?¨ê»˜ ê³ ë ¤???¤ëª…?˜ì„¸??' },
-    5: { key: 'adult', name: '?¼ë°˜', system: '?¹ì‹ ?€ ?¤ë¬´ ì¹œí™”?ì¸ ì½”ë”© ì½”ì¹˜?…ë‹ˆ?? ëª¨ë²” ì½”ë“œ ì¤‘ì‹¬?¼ë¡œ ê°„ê²°?˜ê²Œ ?ˆë‚´?˜ì„¸??' }
+    1: { key: 'elem', name: '\uCD08\uB4F1\uD559\uC0DD', system: '\uB2F9\uC2E0\uC740 \uCD08\uB4F1\uD559\uC0DD\uC744 \uC704\uD55C \uCE5C\uC808\uD55C \uCF54\uB529 \uD29C\uD130\uC785\uB2C8\uB2E4. \uC26C\uC6B4 \uBE44\uC720\uC640 \uC9E7\uACE0 \uAC04\uB2E8\uD55C \uCF54\uB4DC \uC608\uC81C\uB85C \uC124\uBA85\uD558\uC138\uC694.' },
+    2: { key: 'middle', name: '\uC911\uD559\uC0DD', system: '\uC911\uD559\uC0DD\uC744 \uC704\uD55C \uCF54\uB529 \uD29C\uD130\uC785\uB2C8\uB2E4. \uAE30\uBCF8 \uBB38\uBC95\uACFC \uAC1C\uB150\uC744 \uCC28\uADFC\uCC28\uADFC \uC124\uBA85\uD558\uC138\uC694.' },
+    3: { key: 'high', name: '\uACE0\uB4F1\uD559\uC0DD', system: '\uACE0\uB4F1\uD559\uC0DD\uC744 \uC704\uD55C \uCF54\uB529 \uD29C\uD130\uC785\uB2C8\uB2E4. \uC54C\uACE0\uB9AC\uC998\uACFC \uC790\uB8CC\uAD6C\uC870 \uAE30\uCD08\uB97C \uC608\uC81C\uB85C \uC124\uBA85\uD558\uC138\uC694.' },
+    4: { key: 'college', name: '\uB300\uD559\uC0DD', system: '\uB300\uD559\uC0DD\uC744 \uC704\uD55C \uCF54\uB529 \uD29C\uD130\uC785\uB2C8\uB2E4. \uAC1C\uB150\uC744 \uBA85\uD655\uD558\uACE0 \uBCF5\uC7A1\uB3C4\uB3C4 \uD568\uAED8 \uC124\uBA85\uD558\uC138\uC694.' },
+    5: { key: 'adult', name: '\uC77C\uBC18', system: '\uC2E4\uBB34 \uCE5C\uD654\uC801\uC778 \uCF54\uB529 \uCF54\uCE58\uC785\uB2C8\uB2E4. \uBAA8\uBCF4\uBCF4\uB4DC \uC911\uC2EC\uC73C\uB85C \uAC04\uAC10\uD558\uAC8C \uC548\uB0B4\uD558\uC138\uC694.' }
   };
 }
 
@@ -47,39 +47,9 @@ function resolveMode(input) {
 async function ensureFirstRunConfig(cfg, providerOverride) {
   if (hasUserConfig()) return cfg;
   try {
-    const inquirer = require('inquirer');
-    let provider = providerOverride || cfg.provider || 'transformers';
-    if (!providerOverride) {
-      const ans1 = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'provider',
-          message: '?´ë–¤ ëª¨ë¸ ?œê³µ?ë? ?¬ìš©? ê¹Œ??',
-          choices: [
-            { name: 'Transformers(?´ìž¥, ?ë™ ?¤ìš´ë¡œë“œ)', value: 'transformers' },
-            { name: 'Gemini(???„ìš”, ê³ ê¸‰)', value: 'gemini' },
-            { name: 'Local(node-llama-cpp, ê³ ê¸‰)', value: 'local' }
-          ],
-          default: 'transformers'
-        }
-      ]);
-      provider = ans1.provider;
-    }
-
-    const next = { ...cfg, provider };
-    if (provider === 'gemini') {
-      const gemAns = await inquirer.prompt([
-        { type: 'input', name: 'modelPrimary', message: 'ê¸°ë³¸ Gemini ëª¨ë¸:', default: cfg.gemini.modelPrimary || 'gemini-1.5-flash' },
-        { type: 'password', name: 'apiKey', message: 'GEMINI_API_KEY (ê±´ë„ˆ?°ë ¤ë©?Enter):', mask: '*' }
-      ]);
-      next.gemini = { ...cfg.gemini, modelPrimary: gemAns.modelPrimary, apiKey: gemAns.apiKey || cfg.gemini.apiKey };
-    } else if (provider === 'transformers') {
-      next.transformers = { ...cfg.transformers };
-    } else if (provider === 'local') {
-      next.local = { ...cfg.local };
-    }
+    const next = { ...cfg, provider: providerOverride || 'transformers' };
     saveUserConfig(next);
-    console.log('\n[?¤ì • ?€?? ~/.codetutor/config.json ??ê¸°ë³¸ ?¤ì •???€?¥í–ˆ?µë‹ˆ??');
+    console.log('\n[\uC124\uC815 \uC800\uC7A5] ~/.codetutor/config.json \uC5D0 \uAE30\uBCF8 \uC124\uC815\uC744 \uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4.');
     return next;
   } catch (_) {
     return cfg;
@@ -103,42 +73,23 @@ async function startInteractiveMode(providerOverride) {
   });
 
   async function askMode() {
-    try {
-      const inquirer = require('inquirer');
-      const choices = [
-        { name: '1) ì´ˆë“±?™ìƒ', value: '1' },
-        { name: '2) ì¤‘í•™??, value: '2' },
-        { name: '3) ê³ ë“±?™ìƒ', value: '3' },
-        { name: '4) ?€?™ìƒ', value: '4' },
-        { name: '5) ?¼ë°˜', value: '5' }
-      ];
-      const ans = await inquirer.prompt([
-        { type: 'list', name: 'mode', message: 'ëª¨ë“œ ? íƒ', choices }
-      ]);
-      currentMode = resolveMode(ans.mode);
-    } catch (_) {
-      await new Promise((resolve) => {
-        rl.question('ëª¨ë“œ ? íƒ (1-5 ?…ë ¥): ', (ans) => {
-          const m = resolveMode(ans);
-          if (!m) {
-            console.log('? íš¨?˜ì? ?Šì? ?…ë ¥?…ë‹ˆ?? ?¤ì‹œ ? íƒ?˜ì„¸??\n');
-            return resolve(askMode());
-          }
-          currentMode = m;
-          resolve();
-        });
+    await new Promise((resolve) => {
+      rl.question('\uBAA8\uB4DC \uC120\uD0DD (1-5 \uC785\uB825): ', (ans) => {
+        const m = resolveMode(ans);
+        if (!m) {
+          console.log('\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC785\uB825\uC785\uB2C8\uB2E4. \uB2E4\uC2DC \uC120\uD0DD\uD558\uC138\uC694.\n');
+          return resolve(askMode());
+        }
+        currentMode = m;
+        resolve();
       });
-    }
+    });
     history.length = 0;
     history.push({ role: 'system', content: currentMode.system });
     rl.setPrompt(`ct[${currentMode.key}] > `);
-    console.log(`\n[${currentMode.name}] ëª¨ë“œê°€ ?œìž‘?˜ì—ˆ?µë‹ˆ??`);
-    console.log('?„ì?ë§? /help, ëª¨ë“œ ë³€ê²? /mode, ì¢…ë£Œ: exit');
-    console.log('ëª¨ë“œ ?ˆë‚´: 1) ì´ˆë“±?™ìƒ  2) ì¤‘í•™?? 3) ê³ ë“±?™ìƒ  4) ?€?™ìƒ  5) ?¼ë°˜\n');
-
-    if (cfg.provider === 'transformers') {
-      console.log('ì°¸ê³ : ì²??¤í–‰ ??ëª¨ë¸ ê°€ì¤‘ì¹˜ë¥??ë™ ?¤ìš´ë¡œë“œ?©ë‹ˆ???¤íŠ¸?Œí¬ ?„ìš”).');
-    }
+    console.log(`\n[${currentMode.name}] \uBAA8\uB4DC\uAC00 \uC2DC\uC791\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`);
+    console.log('\uB3C4\uC6C0\uB9D0: /help, \uBAA8\uB4DC \uBCC0\uACBD: /mode, \uC885\uB8CC: exit');
+    console.log('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18\n');
     rl.prompt();
   }
 
@@ -151,7 +102,7 @@ async function startInteractiveMode(providerOverride) {
       return;
     }
     if (text === '/help') {
-      console.log('ëª…ë ¹: /help, /mode, exit');
+      console.log('\uBA85\uB839: /help, /mode, exit');
       return rl.prompt();
     }
     if (text === '/mode') {
@@ -174,9 +125,9 @@ async function startInteractiveMode(providerOverride) {
       history.push({ role: 'assistant', content: assistant });
       console.log(`\n${assistant}\n`);
     } catch (err) {
-      // ë¹„ì •???¤íŒ¨ ??1???´ìž¥ ëª¨ë¸ë¡??„í™˜ ???¬ì‹œ??      if (cfg.provider !== 'transformers') {
+      if (cfg.provider !== 'transformers') {
         try {
-          console.log('\n[?ë™ ?„í™˜] ?‘ë‹µ ?¤íŒ¨ë¡??´ìž¥ ëª¨ë¸ë¡??„í™˜ ???¬ì‹œ?„í•©?ˆë‹¤.');
+          console.log('\n[\uC790\uB3D9 \uC804\uD658] \uC751\uB2F5 \uC2E4\uD328\uB85C \uB0B4\uC7A5 \uBAA8\uB378\uB85C \uC804\uD658 \uD6C4 \uC7AC\uC2DC\uB3C4\uD569\uB2C8\uB2E4.');
           cfg.provider = 'transformers';
           saveUserConfig(cfg);
           ai = createAI(cfg);
@@ -190,22 +141,19 @@ async function startInteractiveMode(providerOverride) {
           console.log(`\n${assistant2}\n`);
           rl.prompt();
           return;
-        } catch (_) {
-          // ?„ëž˜ ?œí”Œë¦¿ìœ¼ë¡??´ë°±
-        }
+        } catch (_) {}
       }
-      // ?œí”Œë¦??´ë°±(?? êµ¬êµ¬?? ?¤í? ?¬í•¨)
       let fallback = '';
       const lower = text.toLowerCase();
-      if (lower.includes('êµ¬êµ¬') || lower.includes('gugu')) {
-        fallback = `# ?Œì´??êµ¬êµ¬??(1~9)
+      if (lower.includes('\uAD6C\uAD6C') || lower.includes('gugu')) {
+        fallback = `# \uD30C\uC774\uC36C \uAD6C\uAD6C\uB2E8 (1~9)
 for i in range(1, 10):
     line = []
     for j in range(1, 10):
         line.append(f"{i} x {j} = {i*j}")
     print('   '.join(line))`;
       } else {
-        fallback = `[?¤í”„?¼ì¸] ${currentMode?.name || ''} ëª¨ë“œ ?‘ë‹µ: ${text}`.trim();
+        fallback = `[\uC624\uD504\uB77C\uC778] ${(currentMode?.name || '')} \uBAA8\uB4DC \uC751\uB2F5: ${text}`.trim();
       }
       history.push({ role: 'assistant', content: fallback });
       console.log(`\n${fallback}\n`);
@@ -217,19 +165,19 @@ for i in range(1, 10):
     if (!currentMode) {
       const m = resolveMode(line);
       if (!m) {
-        console.log('? íš¨?˜ì? ?Šì? ?…ë ¥?…ë‹ˆ?? ?¤ì‹œ ? íƒ?˜ì„¸??\n');
+        console.log('\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC785\uB825\uC785\uB2C8\uB2E4. \uB2E4\uC2DC \uC120\uD0DD\uD558\uC138\uC694.\n');
         return askMode();
       }
       currentMode = m;
       history.length = 0;
       history.push({ role: 'system', content: m.system });
       rl.setPrompt(`ct[${m.key}] > `);
-      console.log(`\n[${m.name}] ëª¨ë“œê°€ ?œìž‘?˜ì—ˆ?µë‹ˆ?? ë°”ë¡œ ì§ˆë¬¸???…ë ¥?˜ì„¸??\n`);
+      console.log(`\n[${m.name}] \uBAA8\uB4DC\uAC00 \uC2DC\uC791\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uBC14\uB85C \uC9C8\uBB38\uC744 \uC785\uB825\uD558\uC138\uC694.\n`);
       return rl.prompt();
     }
     handleUserInput(line);
   }).on('close', () => {
-    console.log('?€??ëª¨ë“œë¥?ì¢…ë£Œ?©ë‹ˆ??\n');
+    console.log('\uB300\uD654 \uBAA8\uB4DC\uB97C \uC885\uB8CC\uD569\uB2C8\uB2E4.\n');
     process.exit(0);
   });
 
@@ -237,3 +185,4 @@ for i in range(1, 10):
 }
 
 module.exports = startInteractiveMode;
+
