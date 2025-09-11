@@ -1,8 +1,15 @@
 {
   "name": "code-tutor-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Code Tutor CLI: 학습/연습/도우미 도구 (Ollama 연동)",
-  "keywords": ["cli", "tutor", "ollama", "ai", "chat", "coding"],
+  "keywords": [
+    "cli",
+    "tutor",
+    "ollama",
+    "ai",
+    "chat",
+    "coding"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://example.com/your/repo.git"
