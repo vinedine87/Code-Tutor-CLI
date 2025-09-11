@@ -8,13 +8,13 @@ const { createRunnableLesson, createRunnableBundle } = require('../generate/code
 module.exports = (program) => {
   program
     .command('tutor <question>')
-    .description('질문을 설명하고 실행 가능한 코드 파일을 생성합니다')
-    .option('--level <level>', '레벨(elem|middle|high|college|basic)', 'elem')
-    .option('--lang <language>', '주요 언어 지정(python|javascript 등)', 'python')
-    .option('--langs <languages>', '여러 언어 동시 지정(콤마 구분, 예: py,c,java)')
-    .option('--basename <name>', '생성 파일의 기본 이름', 'main')
-    .option('--runnable', '생성 코드가 바로 실행 가능하도록 템플릿 사용', false)
-    .option('--no-ai', 'AI 호출 없이 파일만 생성')
+    .description('Generate runnable code/README from a question')
+    .option('--level <level>', '?�벨(elem|middle|high|college|basic)', 'elem')
+    .option('--lang <language>', '주요 ?�어 지??python|javascript ??', 'python')
+    .option('--langs <languages>', '?�러 ?�어 ?�시 지??콤마 구분, ?? py,c,java)')
+    .option('--basename <name>', '?�성 ?�일??기본 ?�름', 'main')
+    .option('--runnable', '?�성 코드가 바로 ?�행 가?�하?�록 ?�플�??�용', false)
+    .option('--no-ai', 'AI ?�출 ?�이 ?�일�??�성')
     .action(async (question, options) => {
       const cfg = loadConfig();
       const ai = createAI(cfg);
@@ -25,10 +25,10 @@ module.exports = (program) => {
       if (!options.noAi) {
         try {
           const messages = buildTutorMessages({ question, level: options.level, lang: langs[0] });
-          const res = await ai.chat({ model: cfg.provider === 'gemini' ? cfg.gemini.modelPrimary : cfg.ollama.modelPrimary, messages, stream: false });
+          const res = await ai.chat({ model: (cfg.provider === 'gemini') ? cfg.gemini.modelPrimary : (cfg.provider === 'transformers') ? cfg.transformers.modelPrimary : (cfg.transformers && cfg.transformers.modelPrimary) || 'Xenova/Qwen2-0.5B-Instruct', messages, stream: false });
           aiText = res?.message?.content || res?.content || '';
         } catch (e) {
-          aiText = `AI 연결 실패: ${e.message}`;
+          aiText = `AI ?�결 ?�패: ${e.message}`;
         }
       }
       if (langs.length > 1) {
@@ -38,13 +38,13 @@ module.exports = (program) => {
       }
       const usage = [
         '---',
-        '사용법 요약:',
-        '- ct chat   # 대화형 질문',
+        '?�용�??�약:',
+        '- ct chat   # ?�?�형 질문',
         `- ct tutor "${question}" --lang ${langs[0]} --runnable`,
         ''
       ].join('\n');
       await writeFileSafe(path.join(outDir, 'USAGE.txt'), usage);
-      console.log(`생성 완료: ${outDir}`);
+      console.log(`?�성 ?�료: ${outDir}`);
     });
 };
 
@@ -67,14 +67,14 @@ function resolveLangs(list, single) {
 
 async function ensureUniqueDir(base) {
   let i = 0;
-  // 첫 시도는 base, 이후 base-1, base-2 ...
+  // �??�도??base, ?�후 base-1, base-2 ...
   while (true) {
     const dir = i === 0 ? base : `${base}-${i}`;
     try {
       await ensureDirSafe(dir);
       return dir;
     } catch (e) {
-      if (!String(e.message || '').includes('이미 존재')) throw e;
+      if (!String(e.message || '').includes('?��? 존재')) throw e;
       i += 1;
       continue;
     }

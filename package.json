@@ -24,7 +24,6 @@
   "files": [
     "bin/",
     "src/",
-    "scripts/postinstall.js",
     "README.md",
     "docs/"
   ],

@@ -40,13 +40,6 @@ function loadConfig() {
 
   const def = {
     provider: process.env.CT_PROVIDER || 'transformers',
-    ollama: {
-      host: process.env.CT_OLLAMA_HOST || '127.0.0.1',
-      port: Number(process.env.CT_OLLAMA_PORT || 11434),
-      timeoutMs: Number(process.env.CT_TIMEOUT_MS || 60000),
-      modelPrimary: process.env.CT_MODEL_PRIMARY || 'qwen2:7b',
-      modelCode: process.env.CT_MODEL_CODE || 'starcoder2:7b'
-    },
     gemini: {
       apiKey: process.env.GEMINI_API_KEY || '',
       timeoutMs: Number(process.env.CT_TIMEOUT_MS || 60000),
