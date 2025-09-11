@@ -5,22 +5,23 @@ const { createAI } = require('../ai/provider');
 
 function banner() {
   if (String(process.env.CT_NO_ASCII || '').toLowerCase() === '1' || String(process.env.CT_NO_ASCII || '').toLowerCase() === 'true') {
-    console.log(chalk.yellow('\nCode Tutor CLI'));
-    console.log(chalk.yellow('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
-    console.log(chalk.yellow('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18\n'));
+    console.log(chalk.yellowBright.bold('\nCode Tutor CLI'));
+    console.log(chalk.yellowBright.bold('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
+    console.log(chalk.yellowBright.bold('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18\n'));
     return;
   }
   const title = String.raw`
-  _________          __          __________          __               
- /   _____/  ____  _/  |_  ____  \______   \ _____ _/  |_  ____  ____ 
- \_____  \ _/ __ \ \   __\/  _ \  |       _// __  \\   __\/  _ \/  _ \
- /        \\  ___/  |  | (  <_> ) |    |   \\  ___/ |  | (  <_> |  <_> )
-/_______  / \___  > |__|  \____/  |____|_  / \___  >|__|  \____/ \____/ 
-        \/      \/                         \/      \/                   `;
-  console.log('\n' + chalk.yellow(title));
-  console.log(chalk.yellow('WELCOME TO CODE TUTOR CLI'));
-  console.log(chalk.yellow('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
-  console.log(chalk.yellow('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18'));
+   _____   ____   _____   ______  _______  _______  _______   _______   ______  _      _____
+  / ____| / __ \ |  __ \ |  ____||__   __||  __ \ \|__   __| |__   __| |  ____|| |    / ____|
+ | |     | |  | || |  | || |__      | |   | |  | |   | |       | |    | |__   | |   | (___  
+ | |     | |  | || |  | ||  __|     | |   | |  | |   | |       | |    |  __|  | |    \___ \ 
+ | |____ | |__| || |__| || |____    | |   | |__| |   | |       | |    | |____ | |____ ____) |
+  \_____| \____/ |_____/ |______|   |_|   |_____/    |_|       |_|    |______||______|_____/ 
+                                   CODE  TUTOR  CLI                                           `;
+  console.log('\n' + chalk.yellowBright.bold(title));
+  console.log(chalk.yellowBright.bold('Code Tutor CLI'));
+  console.log(chalk.yellowBright.bold('\uB3C4\uC6C0\uB9D0: /help   \uBAA8\uB4DC \uBCC0\uACBD: /mode   \uC885\uB8CC: exit'));
+  console.log(chalk.yellowBright.bold('\uBAA8\uB4DC \uC548\uB0B4: 1) \uCD08\uB4F1\uD559\uC0DD  2) \uC911\uD559\uC0DD  3) \uACE0\uB4F1\uD559\uC0DD  4) \uB300\uD559\uC0DD  5) \uC77C\uBC18'));
   console.log();
 }
 
@@ -111,6 +112,112 @@ async function startInteractiveMode(providerOverride) {
       return askMode();
     }
 
+    function isGugudanPython(t) {
+      const s = t.toLowerCase();
+      const hasPython = /(python|파이썬|py)/.test(s);
+      const hasGugudan = /(구구\s*단|구구돈|gugudan|multiplication\s*table)/.test(s);
+      return hasPython && hasGugudan;
+    }
+
+    function randomPyName() {
+      const c = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+      return `${c}.py`;
+    }
+
+    function renderGugudan() {
+      const fname = randomPyName();
+      const code = [
+        `# ${fname} - 파이썬 구구단 (1~9)`,
+        `# 각 줄에 1~9까지 곱셈 결과를 출력합니다.`,
+        `def main():`,
+        `    for i in range(1, 10):`,
+        `        line = []`,
+        `        for j in range(1, 10):`,
+        `            line.append(f"{i} x {j} = {i*j}")`,
+        `        print('   '.join(line))`,
+        ``,
+        `if __name__ == "__main__":`,
+        `    main()`,
+      ].join('\n');
+      const display = `=== ${fname} ===\n${code}`;
+      history.push({ role: 'assistant', content: display });
+      console.log(`\n${display}\n`);
+    }
+
+    function maybeRenderPythonTemplate(t) {
+      const s = t.toLowerCase();
+      const isPython = /(python|파이썬|py)/.test(s);
+      if (!isPython) return false;
+      // 버블 정렬
+      if (/(버블\s*정렬|bubble\s*sort)/.test(s)) {
+        const fname = randomPyName();
+        const code = [
+          `# ${fname} - 파이썬 버블 정렬 예제`,
+          `# 주어진 리스트를 오름차순으로 정렬합니다.`,
+          `def bubble_sort(arr):`,
+          `    n = len(arr)`,
+          `    for i in range(n):`,
+          `        for j in range(0, n - i - 1):`,
+          `            if arr[j] > arr[j + 1]:`,
+          `                arr[j], arr[j + 1] = arr[j + 1], arr[j]`,
+          `    return arr`,
+          ``,
+          `def main():`,
+          `    data = [5, 2, 9, 1, 5, 6]`,
+          `    print('원본:', data)`,
+          `    print('정렬:', bubble_sort(data))`,
+          ``,
+          `if __name__ == "__main__":`,
+          `    main()`,
+        ].join('\n');
+        const display = `=== ${fname} ===\n${code}`;
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        return true;
+      }
+      // 피보나치
+      if (/(피보나치|fibonacci)/.test(s)) {
+        const fname = randomPyName();
+        const code = [
+          `# ${fname} - 파이썬 피보나치 수열`,
+          `# n번째 항까지 피보나치 수열을 출력합니다.`,
+          `def fib(n):`,
+          `    a, b = 0, 1`,
+          `    seq = []`,
+          `    for _ in range(n):`,
+          `        seq.append(a)`,
+          `        a, b = b, a + b`,
+          `    return seq`,
+          ``,
+          `def main():`,
+          `    print(fib(10))`,
+          ``,
+          `if __name__ == "__main__":`,
+          `    main()`,
+        ].join('\n');
+        const display = `=== ${fname} ===\n${code}`;
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        return true;
+      }
+      return false;
+    }
+
+    // 코드 요청(구구단+파이썬) 즉시 처리
+    if (isGugudanPython(text)) {
+      history.push({ role: 'user', content: text });
+      renderGugudan();
+      rl.prompt();
+      return;
+    }
+
+    // 추가 템플릿 처리 (버블 정렬/피보나치 등)
+    if (maybeRenderPythonTemplate(text)) {
+      history.push({ role: 'user', content: text });
+      rl.prompt();
+      return;
+    }
+
     history.push({ role: 'user', content: text });
 
     try {
@@ -185,4 +292,3 @@ for i in range(1, 10):
 }
 
 module.exports = startInteractiveMode;
-
