@@ -3,6 +3,7 @@ const chalk = require('chalk');
 const { loadConfig, saveUserConfig, hasUserConfig } = require('../config');
 const path = require('path');
 const { writeFileSafe } = require('../utils/fs');
+const { spawn } = require('child_process');
 const { createAI } = require('../ai/provider');
 
 function banner() {
@@ -178,6 +179,11 @@ async function startInteractiveMode(providerOverride) {
       return /(구구\s*단|구구돈|gugudan|multiplication\s*table)/.test(s);
     }
 
+    function isExceptionReq(t) {
+      const s = t.toLowerCase();
+      return /(예외\s*처리|예외|try\s*-?\s*catch|exception|오류\s*처리|error\s*handling)/.test(s);
+    }
+
     function randomName(ext) {
       const letters = 'abcdefghijklmnopqrstuvwxyz';
       let base = '';
@@ -315,9 +321,148 @@ async function startInteractiveMode(providerOverride) {
       }
     }
 
+    function exceptionCode(lang, fname) {
+      const base = fname.replace(/\.[^.]+$/, '');
+      const javaClass = base.length ? (base[0].toUpperCase() + base.slice(1)) : 'Main';
+      switch (lang) {
+        case 'java':
+          return [
+            `// ${fname} - 자바 예외 처리 예제`,
+            `// 파일 읽기 과정에서 발생할 수 있는 예외를 try-catch로 처리합니다.`,
+            `import java.io.*;`,
+            `public class ${javaClass} {`,
+            `    public static void main(String[] args) {  // 진입점`,
+            `        BufferedReader br = null;  // 파일을 줄 단위로 읽기 위한 리더`,
+            `        try {  // 예외가 발생할 수 있는 구간`,
+            `            br = new BufferedReader(new FileReader("input.txt"));  // 존재하지 않으면 FileNotFoundException`,
+            `            String line = br.readLine();  // IO 예외 가능`,
+            `            System.out.println("첫 줄: " + line);`,
+            `        } catch (FileNotFoundException e) {  // 특정 예외 처리`,
+            `            System.err.println("파일을 찾을 수 없습니다: " + e.getMessage());`,
+            `        } catch (IOException e) {  // 그 외 입출력 예외 처리`,
+            `            System.err.println("입출력 오류: " + e.getMessage());`,
+            `        } finally {  // 예외 발생 여부와 상관없이 실행`,
+            `            try { if (br != null) br.close(); } catch (IOException ignore) {}`,
+            `        }`,
+            `    }`,
+            `}`
+          ].join('\n');
+        case 'kotlin':
+          return [
+            `// ${fname} - 코틀린 예외 처리 예제`,
+            `// 파일 읽기 과정에서 발생할 수 있는 예외를 try-catch로 처리합니다.`,
+            `import java.io.BufferedReader`,
+            `import java.io.FileReader`,
+            `import java.io.FileNotFoundException`,
+            `import java.io.IOException`,
+            `fun main() {  // 진입점`,
+            `    var br: BufferedReader? = null  // 널 가능(나중에 닫기 위해 보관)`,
+            `    try {  // 예외가 발생할 수 있는 구간`,
+            `        br = BufferedReader(FileReader("input.txt"))  // 없으면 FileNotFoundException`,
+            `        val line = br.readLine()  // IO 예외 가능`,
+            `        println("첫 줄: $line")`,
+            `    } catch (e: FileNotFoundException) {`,
+            `        System.err.println("파일을 찾을 수 없습니다: ${'$'}{e.message}")`,
+            `    } catch (e: IOException) {`,
+            `        System.err.println("입출력 오류: ${'$'}{e.message}")`,
+            `    } finally {`,
+            `        try { br?.close() } catch (_: IOException) {}`,
+            `    }`,
+            `}`
+          ].join('\n');
+        case 'python':
+          return [
+            `# ${fname} - 파이썬 예외 처리 예제`,
+            `# 파일 읽기 과정에서 발생할 수 있는 예외를 try-except로 처리합니다.`,
+            `def main():  # 프로그램의 시작점`,
+            `    try:  # 예외가 발생할 수 있는 구간`,
+            `        with open('input.txt', 'r', encoding='utf-8') as f:  # 파일이 없으면 FileNotFoundError`,
+            `            line = f.readline()  # 입출력 중 OSError 가능`,
+            `        print('첫 줄:', line)`,
+            `    except FileNotFoundError as e:  # 특정 예외 처리`,
+            `        print('파일을 찾을 수 없습니다:', e)`,
+            `    except OSError as e:  # 그 외 OS/IO 예외`,
+            `        print('입출력 오류:', e)`,
+            `
+            `,
+            `if __name__ == '__main__':  # 이 파일을 직접 실행했을 때만`,
+            `    main()`
+          ].join('\n');
+        case 'js':
+          return [
+            `// ${fname} - 자바스크립트(Node.js) 예외 처리 예제`,
+            `// 파일 읽기 과정에서 발생할 수 있는 예외를 try-catch로 처리합니다.`,
+            `import { readFileSync } from 'fs';  // 동기 파일 읽기`,
+            `try {  // 예외가 발생할 수 있는 구간`,
+            `  const txt = readFileSync('input.txt', 'utf-8');  // 없으면 예외 발생`,
+            `  console.log('첫 줄:', txt.split('\n')[0]);`,
+            `} catch (e) {  // 모든 예외 포착`,
+            `  console.error('파일 읽기 실패:', e.message);`,
+            `} finally {  // 항상 실행되는 구간(정리 작업 등에 사용)`,
+            `  // 리소스 정리 등이 필요할 때 사용`,
+            `}`
+          ].join('\n');
+        case 'ts':
+          return [
+            `// ${fname} - 타입스크립트 예외 처리 예제`,
+            `// 파일 읽기 과정에서 발생할 수 있는 예외를 try-catch로 처리합니다.`,
+            `import { readFileSync } from 'fs';`,
+            `try {`,
+            `  const txt: string = readFileSync('input.txt', 'utf-8');`,
+            `  console.log('첫 줄:', txt.split('\n')[0]);`,
+            `} catch (e: any) {`,
+            `  console.error('파일 읽기 실패:', e?.message ?? e);`,
+            `} finally {`,
+            `  // 리소스 정리 등이 필요할 때 사용`,
+            `}`
+          ].join('\n');
+        case 'cpp':
+          return [
+            `// ${fname} - C++ 예외 처리 예제`,
+            `// 파일 열기 실패 상황을 예외로 다루고 try-catch로 처리합니다.`,
+            `#include <bits/stdc++.h>`,
+            `using namespace std;`,
+            `int main(){  // 진입점`,
+            `    try {  // 예외가 발생할 수 있는 구간`,
+            `        ifstream fin("input.txt");`,
+            `        if (!fin.is_open()) throw runtime_error("파일을 열 수 없습니다");`,
+            `        string line; getline(fin, line);`,
+            `        cout << "첫 줄: " << line << "\n";`,
+            `    } catch (const exception& e) {  // 표준 예외 처리`,
+            `        cerr << "오류: " << e.what() << "\n";`,
+            `    }`,
+            `    return 0;`,
+            `}`
+          ].join('\n');
+        case 'c':
+          return [
+            `// ${fname} - C 언어 오류 처리 예제`,
+            `// C는 예외가 없으므로 반환값/errno로 오류를 처리합니다.`,
+            `#include <stdio.h>`,
+            `#include <errno.h>`,
+            `#include <string.h>`,
+            `int main(void){  // 진입점`,
+            `    FILE* fp = fopen("input.txt", "r");  // 없으면 NULL 반환 및 errno 설정`,
+            `    if (!fp) {`,
+            `        fprintf(stderr, "파일 열기 실패: %s\n", strerror(errno));  // 상세 오류 메시지 출력`,
+            `        return 1;  // 비정상 종료 코드`,
+            `    }`,
+            `    char buf[256]; if (fgets(buf, sizeof(buf), fp)) {`,
+            `        printf("첫 줄: %s\n", buf);`,
+            `    }`,
+            `    fclose(fp);  // 자원 정리`,
+            `    return 0;`,
+            `}`
+          ].join('\n');
+        default:
+          return `# ${fname} - 예외 처리 예제 (지원 언어 아님)`;
+      }
+    }
+
     async function createAndShowGugudan(lang) {
       const ext = langToExt(lang);
-      const outDir = (loadConfig().outputDir) || 'lessons';
+      // 최상위 루트(현재 작업 디렉터리)에 생성
+      const outDir = process.cwd();
       const fname = randomName(ext);
       const full = path.join(outDir, fname);
       const code = gugudanCode(lang, fname);
@@ -325,6 +470,8 @@ async function startInteractiveMode(providerOverride) {
       const display = [`파일 생성: ${full}`, '', code].join('\n');
       history.push({ role: 'assistant', content: display });
       console.log(`\n${display}\n`);
+      // 생성 직후 파일 열기 시도(플랫폼별 기본 앱)
+      tryOpenFile(full);
     }
 
     function maybeRenderPythonTemplate(t) {
@@ -391,6 +538,23 @@ async function startInteractiveMode(providerOverride) {
       const lang = detectLang(text) || 'python';
       history.push({ role: 'user', content: text });
       await createAndShowGugudan(lang);
+      rl.prompt();
+      return;
+    }
+
+    // 코드 요청(예외 처리 + 언어) 즉시 파일로 생성 후 표시
+    if (isExceptionReq(text)) {
+      const lang = detectLang(text) || 'java';
+      const ext = langToExt(lang);
+      const outDir = process.cwd();
+      const fname = randomName(ext);
+      const full = path.join(outDir, fname);
+      const code = exceptionCode(lang, fname);
+      await writeFileSafe(full, code);
+      const display = [`파일 생성: ${full}`, '', code].join('\n');
+      history.push({ role: 'assistant', content: display });
+      console.log(`\n${display}\n`);
+      tryOpenFile(full);
       rl.prompt();
       return;
     }
@@ -478,4 +642,29 @@ function estimateCostUSD(model, usage) {
   const pin = (usage.prompt_tokens||0) * p.inPTok;
   const pout = (usage.completion_tokens||0) * p.outPTok;
   return pin + pout;
+}
+
+// 플랫폼별 기본 앱으로 파일 열기
+function tryOpenFile(file) {
+  try {
+    const platform = process.platform;
+    if (platform === 'win32') {
+      // Git Bash/MINGW64 호환: cmd의 start 사용
+      const child = spawn('cmd', ['/c', 'start', '', file], { detached: true, stdio: 'ignore' });
+      child.unref();
+      return true;
+    }
+    if (platform === 'darwin') {
+      const child = spawn('open', [file], { detached: true, stdio: 'ignore' });
+      child.unref();
+      return true;
+    }
+    // linux/others
+    const child = spawn('xdg-open', [file], { detached: true, stdio: 'ignore' });
+    child.unref();
+    return true;
+  } catch (e) {
+    // 열기 실패 시 조용히 무시하고 경로만 노출
+    return false;
+  }
 }
