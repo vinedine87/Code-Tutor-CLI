@@ -672,48 +672,68 @@ function estimateCostUSD(model, usage) {
 // VS Code를 우선 사용하고, 실패 시(Windows) 메모장, 그 외 OS 기본 앱으로 파일 열기
 function tryOpenFile(file) {
   try {
+    function spawnDetached(cmd, args = [], opts = {}) {
+      const child = spawn(cmd, args, { detached: true, stdio: 'ignore', ...opts });
+      // 에러 이벤트를 흡수하여 프로세스 크래시/콘솔 출력 방지
+      child.on('error', () => {});
+      child.unref();
+      return child;
+    }
+
     // 1) 사용자 지정 편집기 우선 (CT_EDITOR > EDITOR > VISUAL)
     const editorCmd = process.env.CT_EDITOR || process.env.EDITOR || process.env.VISUAL;
     if (editorCmd && typeof editorCmd === 'string') {
       // 인자 포함 가능하므로 shell 모드에서 전체 커맨드 실행
       const child = spawn(`${editorCmd} "${file}"`, { shell: true, detached: true, stdio: 'ignore' });
+      child.on('error', () => {});
       child.unref();
       return true;
     }
 
     // 2) VS Code(또는 Insiders) 우선 시도 (항상 재사용/라인 열기 옵션)
     try {
-      const c = spawn('code', ['-r', '-g', file], { detached: true, stdio: 'ignore' });
-      c.unref();
+      const c = spawnDetached('code', ['-r', '-g', file]);
+      // code가 없을 때 ENOENT 등 발생 시: code-insiders → (win) notepad → 기본 앱 순으로 대체
+      c.on('error', () => {
+        try {
+          const ci = spawnDetached('code-insiders', ['-r', '-g', file]);
+          ci.on('error', () => {
+            if (process.platform === 'win32') {
+              try { spawnDetached('notepad', [file]); } catch (_) {}
+            }
+          });
+        } catch (_) {
+          if (process.platform === 'win32') {
+            try { spawnDetached('notepad', [file]); } catch (_) {}
+          }
+        }
+      });
       return true;
-    } catch (_) {}
-    try {
-      const c2 = spawn('code-insiders', ['-r', '-g', file], { detached: true, stdio: 'ignore' });
-      c2.unref();
-      return true;
-    } catch (_) {}
+    } catch (_) {
+      try {
+        const ci = spawnDetached('code-insiders', ['-r', '-g', file]);
+        ci.on('error', () => {
+          if (process.platform === 'win32') {
+            try { spawnDetached('notepad', [file]); } catch (_) {}
+          }
+        });
+        return true;
+      } catch (_) {}
+    }
 
     // 3) 플랫폼별 기본 앱/메모장 (최후수단)
     const platform = process.platform;
     if (platform === 'win32') {
       // VS Code가 없는 경우, 메모장으로 열기
-      try {
-        const n = spawn('notepad', [file], { detached: true, stdio: 'ignore' });
-        n.unref();
-        return true;
-      } catch (_) {
-        const c = spawn('cmd', ['/c', 'start', '', file], { detached: true, stdio: 'ignore' });
-        c.unref();
-        return true;
-      }
+      try { spawnDetached('notepad', [file]); return true; } catch (_) {}
+      const c = spawnDetached('cmd', ['/c', 'start', '', file]);
+      return !!c;
     }
     if (platform === 'darwin') {
-      const c = spawn('open', [file], { detached: true, stdio: 'ignore' });
-      c.unref();
+      spawnDetached('open', [file]);
       return true;
     }
-    const c = spawn('xdg-open', [file], { detached: true, stdio: 'ignore' });
-    c.unref();
+    spawnDetached('xdg-open', [file]);
     return true;
   } catch (e) {
     // 열기 실패 시 조용히 무시하고 경로만 노출
