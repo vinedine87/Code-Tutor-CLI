@@ -1,8 +1,12 @@
 function createAI(cfg) {
-  const provider = (cfg.provider || 'huggingface').toLowerCase();
-  const { createHuggingFaceClient } = require('./huggingface');
-  // 온라인 전용: 기본/유일 제공자는 huggingface
-  return createHuggingFaceClient({ ...cfg, provider: 'huggingface' });
+  const provider = (cfg.provider || 'openai').toLowerCase();
+  if (provider === 'openai') {
+    const { createOpenAIClient } = require('./openai');
+    return createOpenAIClient({ ...cfg, provider: 'openai' });
+  }
+  // fallback: default to OpenAI
+  const { createOpenAIClient } = require('./openai');
+  return createOpenAIClient({ ...cfg, provider: 'openai' });
 }
 
 module.exports = { createAI };

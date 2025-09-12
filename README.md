@@ -1,6 +1,6 @@
 ﻿# Code Tutor CLI
 
-설치 즉시 사용 가능한 대화형 코딩 튜터 CLI입니다. 온라인(Hugging Face Inference) 전용으로 동작합니다.
+설치 즉시 사용 가능한 대화형 코딩 튜터 CLI입니다. 온라인(OpenAI) 전용으로 동작합니다.
 
 ## 설치
 
@@ -9,12 +9,12 @@
 ## 빠른 시작
 
 - 대화 모드 실행: `ct chat`
-  - `HF_API_TOKEN`을 설정해 Hugging Face Inference를 사용합니다.
+  - `OPENAI_API_KEY`를 설정해 OpenAI API를 사용합니다.
   - 학습 난이도 모드(초등/중학/고등/대학/일반)를 선택한 뒤 질문을 입력하세요.
 
 온라인 모델 사용(기본)
-- Hugging Face Inference(기본 모델: Qwen/Qwen2.5-7B-Instruct): `HF_API_TOKEN=... ct chat`
-  - 다른 모델을 쓰려면: `CT_HF_MODEL=모델이름 ct chat`
+- OpenAI(기본 모델: gpt-4o-mini): `OPENAI_API_KEY=... ct chat`
+  - 다른 모델을 쓰려면: `CT_OPENAI_MODEL=모델이름 ct chat`
 
 예시
 ```
@@ -24,20 +24,20 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 
 ## 명령어
 
-- `ct chat`      대화형 모드(온라인 전용: Hugging Face Inference)
+- `ct chat`      대화형 모드(온라인 전용: OpenAI)
 - `ct quest`     학습 문제 생성/채점(실행 중심)
 - `ct doctor`    코드 실행 오류 수집 및(선택) 수정 가이드
 
 ## 설정(선택)
 
 - 사용자 설정 파일: `~/.codetutor/config.json`
-- 기본 제공자(provider)는 `huggingface`입니다. 사용자 설정 파일(`~/.codetutor/config.json`)에서 모델 등을 조정할 수 있습니다.
+- 기본 제공자(provider)는 `openai`입니다. 사용자 설정 파일(`~/.codetutor/config.json`)에서 모델 등을 조정할 수 있습니다.
 ```json
 {
-  "provider": "huggingface",
-  "huggingface": {
-    "modelPrimary": "Qwen/Qwen2.5-7B-Instruct",
-    "maxNewTokens": 256,
+  "provider": "openai",
+  "openai": {
+    "modelPrimary": "gpt-4o-mini",
+    "maxTokens": 256,
     "temperature": 0.7
   }
 }
@@ -50,7 +50,7 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 ## 릴리즈/검증(개발자용)
 
 - 버전/파일 검증: `npm run smoke` (CLI 진입/의존성 확인)
-- API 스모크: `HF_API_TOKEN=... npm run smoke:api` (토큰 없으면 자동 스킵)
+- API 스모크: `OPENAI_API_KEY=... npm run smoke:api` (키 없으면 자동 스킵)
 - 배포 전 점검: `npm run prepublishOnly` (필수 파일/의존성 정책 검사)
 
 ## Windows(Git Bash, MINGW64) 설치/실행 순서
@@ -60,17 +60,17 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 npm install -g code-tutor-cli
 ```
 
-2) Hugging Face 토큰 발급(로그인 필요)
-- 링크: https://huggingface.co/settings/tokens → New token → 권한 Read
+2) OpenAI API 키 발급(로그인 필요)
+- 링크: https://platform.openai.com/api-keys
 
-3) 현재 세션에 토큰 등록(즉시 반영)
+3) 현재 세션에 키 등록(즉시 반영)
 ```
-export HF_API_TOKEN="hf_발급받은_토큰값"
+export OPENAI_API_KEY="sk-발급받은_키값"
 ```
 
 4) 영구 등록(선택)
 ```
-echo 'export HF_API_TOKEN="hf_발급받은_토큰값"' >> ~/.bashrc && source ~/.bashrc
+echo 'export OPENAI_API_KEY="sk-발급받은_키값"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 5) 실행
@@ -79,9 +79,8 @@ ct chat
 ```
 
 문제 해결 팁
-- 모델 페이지에서 사용 약관 동의가 필요한 경우, 해당 모델 페이지에서 먼저 동의해야 API 호출이 정상 동작합니다.
-- 토큰 오타/만료 여부와 네트워크 상태를 확인하세요.
-- 일시적 5xx가 발생하면 잠시 후 재시도하거나 `CT_HF_MODEL`로 다른 공개 모델을 지정하세요. (기본 호출은 `wait_for_model=true`로 대기 시도)
+- 키 오타/만료 여부와 네트워크 상태를 확인하세요.
+- 일시적 오류가 발생하면 잠시 후 재시도하거나 `CT_OPENAI_MODEL`로 다른 모델을 지정하세요.
 
 ## Windows(PowerShell) 설치/실행 순서
 
@@ -90,17 +89,17 @@ ct chat
 npm install -g code-tutor-cli
 ```
 
-2) Hugging Face 토큰 발급(로그인 필요)
-- 링크: https://huggingface.co/settings/tokens → New token → 권한 Read
+2) OpenAI API 키 발급(로그인 필요)
+- 링크: https://platform.openai.com/api-keys
 
-3) 현재 세션에 토큰 등록(즉시 반영)
+3) 현재 세션에 키 등록(즉시 반영)
 ```
-$env:HF_API_TOKEN = "hf_발급받은_토큰값"
+$env:OPENAI_API_KEY = "sk-발급받은_키값"
 ```
 
 4) 영구 등록(새 터미널부터 적용)
 ```
-setx HF_API_TOKEN "hf_발급받은_토큰값"
+setx OPENAI_API_KEY "sk-발급받은_키값"
 ```
 
 5) 실행
@@ -109,16 +108,16 @@ ct chat
 ```
 
 문제 해결 팁
-- `echo $env:HF_API_TOKEN`로 값 확인, 새 터미널 필요 여부 확인.
-- 모델 약관 동의/네트워크 상태 점검.
+- `echo $env:OPENAI_API_KEY`로 값 확인, 새 터미널 필요 여부 확인.
+- 네트워크 상태 점검.
 
 ## Windows(CMD) 설치/실행 순서
 
 1) 설치: `npm install -g code-tutor-cli`
 
-2) 현재 세션 등록: `set HF_API_TOKEN=hf_발급받은_토큰값`
+2) 현재 세션 등록: `set OPENAI_API_KEY=sk-발급받은_키값`
 
-3) 영구 등록: `setx HF_API_TOKEN "hf_발급받은_토큰값"` (새 창 필요)
+3) 영구 등록: `setx OPENAI_API_KEY "sk-발급받은_키값"` (새 창 필요)
 
 4) 실행: `ct chat`
 
@@ -128,12 +127,12 @@ ct chat
 
 2) 현재 세션 등록
 ```
-export HF_API_TOKEN="hf_발급받은_토큰값"
+export OPENAI_API_KEY="sk-발급받은_키값"
 ```
 
 3) 영구 등록
 ```
-echo 'export HF_API_TOKEN="hf_발급받은_토큰값"' >> ~/.zshrc && source ~/.zshrc
+echo 'export OPENAI_API_KEY="sk-발급받은_키값"' >> ~/.zshrc && source ~/.zshrc
 ```
 
 4) 실행: `ct chat`
@@ -144,12 +143,12 @@ echo 'export HF_API_TOKEN="hf_발급받은_토큰값"' >> ~/.zshrc && source ~/.
 
 2) 현재 세션 등록
 ```
-export HF_API_TOKEN="hf_발급받은_토큰값"
+export OPENAI_API_KEY="sk-발급받은_키값"
 ```
 
 3) 영구 등록
 ```
-echo 'export HF_API_TOKEN="hf_발급받은_토큰값"' >> ~/.bashrc && source ~/.bashrc
+echo 'export OPENAI_API_KEY="sk-발급받은_키값"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 4) 실행: `ct chat`

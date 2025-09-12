@@ -13,11 +13,10 @@ try {
   console.log('[smoke] checking CLI version...');
   sh('node', ['bin/ct.js', '--version']);
 
-  console.log('[smoke] checking dependency @huggingface/inference...');
-  require('@huggingface/inference');
+  console.log('[smoke] checking dependency openai...');
+  require('openai');
   console.log('[smoke] OK');
 } catch (e) {
   console.error('[smoke] FAIL:', e.message);
   process.exit(1);
 }
-

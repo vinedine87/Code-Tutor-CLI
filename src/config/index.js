@@ -39,12 +39,12 @@ function loadConfig() {
   const projCfg = path.join(cwd, 'codetutor.config.json');
 
   const def = {
-    provider: 'huggingface',
-    huggingface: {
-      apiToken: process.env.HF_API_TOKEN || '',
-      modelPrimary: process.env.CT_HF_MODEL || 'Qwen/Qwen2.5-7B-Instruct',
-      maxNewTokens: Number(process.env.CT_HF_MAX_TOKENS || 256),
-      temperature: Number(process.env.CT_HF_TEMPERATURE || 0.7)
+    provider: 'openai',
+    openai: {
+      apiKey: process.env.OPENAI_API_KEY || '',
+      modelPrimary: process.env.CT_OPENAI_MODEL || 'gpt-4o-mini',
+      maxTokens: Number(process.env.CT_OPENAI_MAX_TOKENS || 256),
+      temperature: Number(process.env.CT_OPENAI_TEMPERATURE || 0.7)
     },
     outputDir: 'lessons'
   };
@@ -53,7 +53,7 @@ function loadConfig() {
   const proj = readJsonSafe(projCfg);
 
   const cfg = { ...def, ...user, ...proj };
-  cfg.provider = 'huggingface';
+  cfg.provider = 'openai';
   return cfg;
 }
 

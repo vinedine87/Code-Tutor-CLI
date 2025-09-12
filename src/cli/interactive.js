@@ -51,10 +51,10 @@ async function ensureFirstRunConfig(cfg, providerOverride) {
     // 첫 저장 시 민감정보(apiToken)는 저장하지 않도록 마스킹
     const masked = {
       ...cfg,
-      provider: providerOverride || 'huggingface',
-      huggingface: {
-        ...(cfg.huggingface || {}),
-        apiToken: ''
+      provider: providerOverride || 'openai',
+      openai: {
+        ...(cfg.openai || {}),
+        apiKey: ''
       }
     };
     // 최초 실행 시에도 설정 저장 안내 문구는 표시하지 않습니다.
@@ -230,7 +230,6 @@ async function startInteractiveMode(providerOverride) {
 
     try {
       const res = await ai.chat({
-        model: cfg.huggingface && cfg.huggingface.modelPrimary,
         messages: history,
         stream: false
       });

@@ -1,7 +1,7 @@
 {
   "name": "code-tutor-cli",
-  "version": "0.3.0",
-  "description": "Code Tutor CLI: 학습/연습/도우미 도구 (Hugging Face Inference 연동)",
+  "version": "0.3.1",
+  "description": "Code Tutor CLI: 학습/연습/도우미 도구 (OpenAI 연동)",
   "keywords": [
     "cli",
     "tutor",
@@ -45,7 +45,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
-    "@huggingface/inference": "^2.8.1",
+    "openai": "^4.56.0",
     "fs-extra": "^11.2.0",
     "inquirer": "^9.2.15",
     "ora": "^5.4.1"
