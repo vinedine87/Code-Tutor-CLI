@@ -44,12 +44,12 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 ```
 
 ### 에디터 연동(파일 자동 열기)
-- 우선 순위: `CT_EDITOR` > `EDITOR` > `VISUAL` > VS Code 감지(`code -r -g`) > OS 기본 앱.
-- VS Code 통합 터미널에서 실행 시, 열려 있는 창을 재사용합니다.
+- 기본: VS Code로 파일을 엽니다. `code -r -g <file>` 사용(열려 있는 창 재사용, 위치 이동).
+- VS Code가 없고 Windows인 경우: 메모장(`notepad`)으로 엽니다.
+- 그 외: OS 기본 앱으로 엽니다(macOS `open`, Linux `xdg-open`).
 - 사용자 지정 예시:
   - PowerShell: `setx CT_EDITOR "code -r -g"` (새 터미널 필요)
   - Git Bash/zsh: `export CT_EDITOR="code -r -g"`
-  - JetBrains 계열 사용 시 PATH에 `idea`/`webstorm`/`pycharm` 등을 등록하면 우선 시도합니다.
 
 ### 사용량/비용 표시(선택)
 - 대화 중 토큰 사용량과 대략 비용을 보고 싶다면 다음을 사용하세요.

@@ -644,7 +644,7 @@ function estimateCostUSD(model, usage) {
   return pin + pout;
 }
 
-// 현재 열린 편집기를 우선 시도하고, 안 되면 OS 기본 앱으로 파일 열기
+// VS Code를 우선 사용하고, 실패 시(Windows) 메모장, 그 외 OS 기본 앱으로 파일 열기
 function tryOpenFile(file) {
   try {
     // 1) 사용자 지정 편집기 우선 (CT_EDITOR > EDITOR > VISUAL)
@@ -656,38 +656,31 @@ function tryOpenFile(file) {
       return true;
     }
 
-    // 2) VS Code 감지/우선 (통합 터미널 등)
-    const preferVSCode = String(process.env.TERM_PROGRAM).toLowerCase() === 'vscode' || !!process.env.VSCODE_PID;
-    const tryVSCode = (bin) => {
-      try {
-        const c = spawn(bin, ['-r', '-g', file], { detached: true, stdio: 'ignore' });
-        c.unref();
-        return true;
-      } catch (_) { return false; }
-    };
-    if (preferVSCode) {
-      if (tryVSCode('code') || tryVSCode('code-insiders')) return true;
-    } else {
-      // 통합 터미널이 아닐 때도 code가 있으면 재사용 시도
-      if (tryVSCode('code') || tryVSCode('code-insiders')) return true;
-    }
-
-    // 3) JetBrains 계열 바이너리 시도 (설치/환경에 따라 가용)
-    const jetbrainsBins = ['idea', 'webstorm', 'pycharm', 'intellij-idea', 'charm', 'goland', 'clion', 'rider'];
-    for (const bin of jetbrainsBins) {
-      try {
-        const c = spawn(bin, [file], { detached: true, stdio: 'ignore' });
-        c.unref();
-        return true;
-      } catch (_) {}
-    }
-
-    // 4) 플랫폼별 기본 앱으로 열기 (최후수단)
-    const platform = process.platform;
-    if (platform === 'win32') {
-      const c = spawn('cmd', ['/c', 'start', '', file], { detached: true, stdio: 'ignore' });
+    // 2) VS Code(또는 Insiders) 우선 시도 (항상 재사용/라인 열기 옵션)
+    try {
+      const c = spawn('code', ['-r', '-g', file], { detached: true, stdio: 'ignore' });
       c.unref();
       return true;
+    } catch (_) {}
+    try {
+      const c2 = spawn('code-insiders', ['-r', '-g', file], { detached: true, stdio: 'ignore' });
+      c2.unref();
+      return true;
+    } catch (_) {}
+
+    // 3) 플랫폼별 기본 앱/메모장 (최후수단)
+    const platform = process.platform;
+    if (platform === 'win32') {
+      // VS Code가 없는 경우, 메모장으로 열기
+      try {
+        const n = spawn('notepad', [file], { detached: true, stdio: 'ignore' });
+        n.unref();
+        return true;
+      } catch (_) {
+        const c = spawn('cmd', ['/c', 'start', '', file], { detached: true, stdio: 'ignore' });
+        c.unref();
+        return true;
+      }
     }
     if (platform === 'darwin') {
       const c = spawn('open', [file], { detached: true, stdio: 'ignore' });
