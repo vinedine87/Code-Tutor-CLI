@@ -191,6 +191,19 @@ async function startInteractiveMode(providerOverride) {
       return `${base}.${ext}`;
     }
 
+    function nextAvailableFile(dir, base, ext) {
+      const sanitize = (s) => s.replace(/[^A-Za-z0-9_\-]/g, '_');
+      let b = sanitize(base);
+      let candidate = path.join(dir, `${b}.${ext}`);
+      if (!require('fs').existsSync(candidate)) return candidate;
+      let i = 2;
+      while (true) {
+        candidate = path.join(dir, `${b}-${i}.${ext}`);
+        if (!require('fs').existsSync(candidate)) return candidate;
+        i++;
+      }
+    }
+
     function langToExt(lang) {
       switch (lang) {
         case 'python': return 'py';
@@ -461,16 +474,16 @@ async function startInteractiveMode(providerOverride) {
 
     async function createAndShowGugudan(lang) {
       const ext = langToExt(lang);
-      // 최상위 루트(현재 작업 디렉터리)에 생성
       const outDir = process.cwd();
-      const fname = randomName(ext);
-      const full = path.join(outDir, fname);
+      // 의미 있는 영어 파일명: multiplication_table (Java/Kotlin은 PascalCase)
+      const base = (lang === 'java' || lang === 'kotlin') ? 'MultiplicationTable' : 'multiplication_table';
+      const full = nextAvailableFile(outDir, base, ext);
+      const fname = path.basename(full);
       const code = gugudanCode(lang, fname);
       await writeFileSafe(full, code);
       const display = [`파일 생성: ${full}`, '', code].join('\n');
       history.push({ role: 'assistant', content: display });
       console.log(`\n${display}\n`);
-      // 생성 직후 파일 열기 시도(플랫폼별 기본 앱)
       tryOpenFile(full);
     }
 
@@ -480,7 +493,8 @@ async function startInteractiveMode(providerOverride) {
       if (!isPython) return false;
       // 버블 정렬
       if (/(버블\s*정렬|bubble\s*sort)/.test(s)) {
-        const fname = randomPyName();
+        const outDir = process.cwd();
+        const fname = path.basename(nextAvailableFile(outDir, 'bubble_sort', 'py'));
         const code = [
           `# ${fname} - 파이썬 버블 정렬 예제`,
           `# 주어진 리스트를 오름차순으로 정렬합니다.`,
@@ -500,14 +514,20 @@ async function startInteractiveMode(providerOverride) {
           `if __name__ == "__main__":`,
           `    main()`,
         ].join('\n');
-        const display = `=== ${fname} ===\n${code}`;
-        history.push({ role: 'assistant', content: display });
-        console.log(`\n${display}\n`);
+        const full = path.join(outDir, fname);
+        return (async () => {
+          await writeFileSafe(full, code);
+          const display = [`파일 생성: ${full}`, '', code].join('\n');
+          history.push({ role: 'assistant', content: display });
+          console.log(`\n${display}\n`);
+          tryOpenFile(full);
+        })().then(() => true);
         return true;
       }
       // 피보나치
       if (/(피보나치|fibonacci)/.test(s)) {
-        const fname = randomPyName();
+        const outDir = process.cwd();
+        const fname = path.basename(nextAvailableFile(outDir, 'fibonacci', 'py'));
         const code = [
           `# ${fname} - 파이썬 피보나치 수열`,
           `# n번째 항까지 피보나치 수열을 출력합니다.`,
@@ -525,9 +545,14 @@ async function startInteractiveMode(providerOverride) {
           `if __name__ == "__main__":`,
           `    main()`,
         ].join('\n');
-        const display = `=== ${fname} ===\n${code}`;
-        history.push({ role: 'assistant', content: display });
-        console.log(`\n${display}\n`);
+        const full = path.join(outDir, fname);
+        return (async () => {
+          await writeFileSafe(full, code);
+          const display = [`파일 생성: ${full}`, '', code].join('\n');
+          history.push({ role: 'assistant', content: display });
+          console.log(`\n${display}\n`);
+          tryOpenFile(full);
+        })().then(() => true);
         return true;
       }
       return false;
