@@ -644,24 +644,58 @@ function estimateCostUSD(model, usage) {
   return pin + pout;
 }
 
-// 플랫폼별 기본 앱으로 파일 열기
+// 현재 열린 편집기를 우선 시도하고, 안 되면 OS 기본 앱으로 파일 열기
 function tryOpenFile(file) {
   try {
+    // 1) 사용자 지정 편집기 우선 (CT_EDITOR > EDITOR > VISUAL)
+    const editorCmd = process.env.CT_EDITOR || process.env.EDITOR || process.env.VISUAL;
+    if (editorCmd && typeof editorCmd === 'string') {
+      // 인자 포함 가능하므로 shell 모드에서 전체 커맨드 실행
+      const child = spawn(`${editorCmd} "${file}"`, { shell: true, detached: true, stdio: 'ignore' });
+      child.unref();
+      return true;
+    }
+
+    // 2) VS Code 감지/우선 (통합 터미널 등)
+    const preferVSCode = String(process.env.TERM_PROGRAM).toLowerCase() === 'vscode' || !!process.env.VSCODE_PID;
+    const tryVSCode = (bin) => {
+      try {
+        const c = spawn(bin, ['-r', '-g', file], { detached: true, stdio: 'ignore' });
+        c.unref();
+        return true;
+      } catch (_) { return false; }
+    };
+    if (preferVSCode) {
+      if (tryVSCode('code') || tryVSCode('code-insiders')) return true;
+    } else {
+      // 통합 터미널이 아닐 때도 code가 있으면 재사용 시도
+      if (tryVSCode('code') || tryVSCode('code-insiders')) return true;
+    }
+
+    // 3) JetBrains 계열 바이너리 시도 (설치/환경에 따라 가용)
+    const jetbrainsBins = ['idea', 'webstorm', 'pycharm', 'intellij-idea', 'charm', 'goland', 'clion', 'rider'];
+    for (const bin of jetbrainsBins) {
+      try {
+        const c = spawn(bin, [file], { detached: true, stdio: 'ignore' });
+        c.unref();
+        return true;
+      } catch (_) {}
+    }
+
+    // 4) 플랫폼별 기본 앱으로 열기 (최후수단)
     const platform = process.platform;
     if (platform === 'win32') {
-      // Git Bash/MINGW64 호환: cmd의 start 사용
-      const child = spawn('cmd', ['/c', 'start', '', file], { detached: true, stdio: 'ignore' });
-      child.unref();
+      const c = spawn('cmd', ['/c', 'start', '', file], { detached: true, stdio: 'ignore' });
+      c.unref();
       return true;
     }
     if (platform === 'darwin') {
-      const child = spawn('open', [file], { detached: true, stdio: 'ignore' });
-      child.unref();
+      const c = spawn('open', [file], { detached: true, stdio: 'ignore' });
+      c.unref();
       return true;
     }
-    // linux/others
-    const child = spawn('xdg-open', [file], { detached: true, stdio: 'ignore' });
-    child.unref();
+    const c = spawn('xdg-open', [file], { detached: true, stdio: 'ignore' });
+    c.unref();
     return true;
   } catch (e) {
     // 열기 실패 시 조용히 무시하고 경로만 노출
