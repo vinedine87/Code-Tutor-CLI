@@ -164,13 +164,14 @@ async function startInteractiveMode(providerOverride) {
     // 언어/요청 감지
     function detectLang(t) {
       const s = t.toLowerCase();
-      if (/(python|파이썬|py)/.test(s)) return 'python';
-      if (/(kotlin|코틀린|kt)/.test(s)) return 'kotlin';
-      if (/(java|자바)/.test(s)) return 'java';
-      if (/(\bc\+\+\b|cpp|c\+\+)/.test(s)) return 'cpp';
+      // 우선순위: python > ts > js > kotlin > cpp > c > java(자바스크립트와 구분)
+      if (/(python|파이썬|\bpy\b)/.test(s)) return 'python';
+      if (/(typescript|\bts\b)/.test(s)) return 'ts';
+      if (/(javascript|자바스크립트|\bjs\b)/.test(s)) return 'js';
+      if (/(kotlin|코틀린|\bkt\b)/.test(s)) return 'kotlin';
+      if (/(\bc\+\+\b|\bcpp\b|c\+\+)/.test(s)) return 'cpp';
       if (/(\bc\b|c언어)/.test(s)) return 'c';
-      if (/(typescript|ts)/.test(s)) return 'ts';
-      if (/(javascript|자바스크립트|js)/.test(s)) return 'js';
+      if (/(java(?!script)|자바(?!스크립트))/.test(s)) return 'java';
       return null;
     }
 
@@ -472,6 +473,261 @@ async function startInteractiveMode(providerOverride) {
       }
     }
 
+    function isCodeRequest(t) {
+      const s = t.toLowerCase();
+      return /\b(code|example|snippet|implement|write|generate)\b/.test(s)
+        || /(코드|예제|샘플|파일|만들어줘|작성|구현|생성|소스)/.test(s);
+    }
+
+    function topicBaseFromText(t, lang) {
+      const s = t.toLowerCase();
+      if (/(구구\s*단|gugudan|multiplication\s*table)/.test(s)) return (lang === 'java' || lang === 'kotlin') ? 'MultiplicationTable' : 'multiplication_table';
+      if (/(버블\s*정렬|bubble\s*sort)/.test(s)) return (lang === 'java' || lang === 'kotlin') ? 'BubbleSort' : 'bubble_sort';
+      if (/(정렬|sort(ing)?)/.test(s)) return (lang === 'java' || lang === 'kotlin') ? 'SortExample' : 'sort_example';
+      if (/(포인터|pointer)/.test(s)) return (lang === 'java' || lang === 'kotlin') ? 'PointerNote' : 'pointer_example';
+      if (/(스택|stack)/.test(s)) return (lang === 'java' || lang === 'kotlin') ? 'StackExample' : 'stack_example';
+      if (/(큐|queue)/.test(s)) return (lang === 'java' || lang === 'kotlin') ? 'QueueExample' : 'queue_example';
+      if (/(트리|tree)/.test(s)) return (lang === 'java' || lang === 'kotlin') ? 'TreeExample' : 'tree_example';
+      return (lang === 'java' || lang === 'kotlin') ? 'Main' : 'program';
+    }
+
+    function extractCodeFromAI(text, lang) {
+      const content = String(text || '');
+      const re = /```([a-zA-Z0-9+\-]*)\n([\s\S]*?)```/g;
+      let m;
+      let first = null;
+      while ((m = re.exec(content)) !== null) {
+        const blockLang = (m[1] || '').toLowerCase();
+        const code = m[2] || '';
+        if (!first) first = code;
+        // prefer matching language block if present
+        if (blockLang) {
+          if ((lang === 'js' && (blockLang.includes('javascript') || blockLang === 'js'))
+            || (lang === 'ts' && (blockLang.includes('typescript') || blockLang === 'ts'))
+            || (lang === 'python' && blockLang.includes('python'))
+            || (lang === 'java' && blockLang.includes('java'))
+            || (lang === 'kotlin' && (blockLang.includes('kotlin') || blockLang === 'kt'))
+            || (lang === 'c' && blockLang === 'c')
+            || (lang === 'cpp' && (blockLang.includes('cpp') || blockLang.includes('c++')))) {
+            return code.trim();
+          }
+        }
+      }
+      // fallback: first block or entire content
+      return (first || content).trim();
+    }
+
+    async function createCodeViaAI(lang, userText) {
+      const ext = langToExt(lang);
+      const outDir = process.cwd();
+      const base = topicBaseFromText(userText, lang);
+      const full = nextAvailableFile(outDir, base, ext);
+      const fname = path.basename(full);
+
+      const system = [
+        'You are a helpful coding assistant.',
+        `Generate a single self-contained ${lang.toUpperCase()} source file.`,
+        '- Output ONLY the code, inside one Markdown code block.',
+        '- No explanations before or after.',
+        '- Provide an entry point (e.g., main function) if applicable.',
+        '- If input/output is implied, use simple stdin/stdout examples.',
+      ].join('\n');
+      const messages = [
+        { role: 'system', content: system },
+        { role: 'user', content: userText }
+      ];
+      try {
+        const res = await ai.chat({ messages, stream: false });
+        const txt = res?.message?.content || res?.content || '';
+        const code = extractCodeFromAI(txt, lang);
+        await writeFileSafe(full, code);
+        const display = [`파일 생성: ${full}`, '', code].join('\n');
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        tryOpenFile(full);
+        return true;
+      } catch (e) {
+        // Fallback: generic snippet
+        const code = genericCode(lang, fname);
+        await writeFileSafe(full, code);
+        const display = [`파일 생성(대체 스니펫): ${full}`, '', code].join('\n');
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        tryOpenFile(full);
+        return true;
+      }
+    }
+
+    function bubbleSortCode(lang, fname) {
+      switch (lang) {
+        case 'python':
+          return [
+            `# ${fname} - 파이썬 버블 정렬`,
+            `def bubble_sort(a):`,
+            `    n = len(a)`,
+            `    for i in range(n):`,
+            `        for j in range(0, n - i - 1):`,
+            `            if a[j] > a[j+1]:`,
+            `                a[j], a[j+1] = a[j+1], a[j]`,
+            `    return a`,
+            ``,
+            `if __name__ == '__main__':`,
+            `    data = [5,2,9,1,5,6]`,
+            `    print('정렬:', bubble_sort(data))`
+          ].join('\n');
+        case 'java':
+          return [
+            `// ${fname} - 자바 버블 정렬`,
+            `import java.util.*;`,
+            `public class ${fname.replace(/\.[^.]+$/, '')} {`,
+            `  static void bubbleSort(int[] a){`,
+            `    for(int i=0;i<a.length;i++){`,
+            `      for(int j=0;j<a.length-i-1;j++){`,
+            `        if(a[j]>a[j+1]){int t=a[j];a[j]=a[j+1];a[j+1]=t;}`,
+            `      }`,
+            `    }`,
+            `  }`,
+            `  public static void main(String[] args){`,
+            `    int[] a={5,2,9,1,5,6};`,
+            `    bubbleSort(a);`,
+            `    System.out.println(Arrays.toString(a));`,
+            `  }`,
+            `}`
+          ].join('\n');
+        case 'kotlin':
+          return [
+            `// ${fname} - 코틀린 버블 정렬`,
+            `fun bubbleSort(a: MutableList<Int>) {`,
+            `  for (i in a.indices) {`,
+            `    for (j in 0 until a.size - i - 1) {`,
+            `      if (a[j] > a[j+1]) { val t=a[j]; a[j]=a[j+1]; a[j+1]=t }`,
+            `    }`,
+            `  }`,
+            `}`,
+            `fun main(){`,
+            `  val a = mutableListOf(5,2,9,1,5,6)`,
+            `  bubbleSort(a)`,
+            `  println(a)`,
+            `}`
+          ].join('\n');
+        case 'c':
+          return [
+            `// ${fname} - C 버블 정렬`,
+            `#include <stdio.h>`,
+            `void bubble(int *a, int n){`,
+            `  for(int i=0;i<n;i++) for(int j=0;j<n-i-1;j++) if(a[j]>a[j+1]){int t=a[j];a[j]=a[j+1];a[j+1]=t;}`,
+            `}`,
+            `int main(){int a[]={5,2,9,1,5,6};int n=sizeof(a)/sizeof(a[0]);bubble(a,n);for(int i=0;i<n;i++) printf("%d ",a[i]);printf("\n");}`
+          ].join('\n');
+        case 'cpp':
+          return [
+            `// ${fname} - C++ 버블 정렬`,
+            `#include <bits/stdc++.h>`,
+            `using namespace std;`,
+            `int main(){ vector<int> a={5,2,9,1,5,6};`,
+            `  for(size_t i=0;i<a.size();++i) for(size_t j=0;j+1<a.size()-i;++j) if(a[j]>a[j+1]) swap(a[j],a[j+1]);`,
+            `  for(size_t i=0;i<a.size();++i) cout<<a[i]<<" "; cout<<"\n"; }`
+          ].join('\n');
+        case 'js':
+          return [
+            `// ${fname} - 자바스크립트 정렬 예제 (버블 + 내장 sort)`,
+            `function bubbleSort(a){`,
+            `  a = a.slice();`,
+            `  for (let i=0;i<a.length;i++) for (let j=0;j<a.length-i-1;j++) if (a[j]>a[j+1]) [a[j],a[j+1]]=[a[j+1],a[j]];`,
+            `  return a;`,
+            `}`,
+            `const data=[5,2,9,1,5,6];`,
+            `console.log('bubble:', bubbleSort(data));`,
+            `console.log('builtin:', data.slice().sort((x,y)=>x-y));`
+          ].join('\n');
+        case 'ts':
+          return [
+            `// ${fname} - 타입스크립트 정렬 예제 (버블 + 내장 sort)`,
+            `function bubbleSort(a: number[]): number[] {`,
+            `  const b = a.slice();`,
+            `  for (let i=0;i<b.length;i++) for (let j=0;j<b.length-i-1;j++) if (b[j]>b[j+1]) [b[j],b[j+1]]=[b[j+1],b[j]];`,
+            `  return b;`,
+            `}`,
+            `const data: number[] = [5,2,9,1,5,6];`,
+            `console.log('bubble:', bubbleSort(data));`,
+            `console.log('builtin:', data.slice().sort((x,y)=>x-y));`
+          ].join('\n');
+        default:
+          return `# ${fname} - 정렬 예제`;
+      }
+    }
+
+    function pointerCode(lang, fname) {
+      switch (lang) {
+        case 'c':
+          return [
+            `// ${fname} - C 포인터 기초`,
+            `#include <stdio.h>`,
+            `int main(void){`,
+            `  int x = 42;`,
+            `  int *p = &x;`,
+            `  printf("x=%d\n", x);`,
+            `  printf("&x=%p, p=%p\n", (void*)&x, (void*)p);`,
+            `  *p = 100;`,
+            `  printf("x(after)=%d\n", x);`,
+            `  return 0;`,
+            `}`
+          ].join('\n');
+        case 'cpp':
+          return [
+            `// ${fname} - C++ 포인터/참조 기초`,
+            `#include <bits/stdc++.h>`,
+            `using namespace std;`,
+            `int main(){`,
+            `  int x=42; int* p=&x; int &r=x;`,
+            `  cout<<"x="<<x<<"\n";`,
+            `  cout<<"p="<<p<<" *p="<<*p<<"\n";`,
+            `  r=100; cout<<"x(after)="<<x<<" *p="<<*p<<"\n";`,
+            `}`
+          ].join('\n');
+        default:
+          return `// ${fname} - 포인터는 C/C++에서 주로 사용됩니다.`;
+      }
+    }
+
+    async function maybeRenderCommonTemplates(t) {
+      const s = t.toLowerCase();
+      const outDir = process.cwd();
+      const lang = detectLang(t) || 'python';
+
+      // 포인터 예제 요청
+      if (/(포인터|pointer)/.test(s)) {
+        const ext = langToExt(lang);
+        const base = (lang === 'c') ? 'pointer_example' : (lang === 'cpp' ? 'pointer_example' : 'pointer_note');
+        const full = nextAvailableFile(outDir, base, ext);
+        const fname = path.basename(full);
+        const code = pointerCode(lang, fname);
+        await writeFileSafe(full, code);
+        const display = [`파일 생성: ${full}`, '', code].join('\n');
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        tryOpenFile(full);
+        return true;
+      }
+
+      // 정렬/버블 정렬 예제 요청
+      if (/(버블\s*정렬|bubble\s*sort|정렬|sort(ing)?)/.test(s)) {
+        const ext = langToExt(lang);
+        const base = (lang === 'java' || lang === 'kotlin') ? 'BubbleSort' : 'bubble_sort';
+        const full = nextAvailableFile(outDir, base, ext);
+        const fname = path.basename(full);
+        const code = bubbleSortCode(lang, fname);
+        await writeFileSafe(full, code);
+        const display = [`파일 생성: ${full}`, '', code].join('\n');
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        tryOpenFile(full);
+        return true;
+      }
+
+      return false;
+    }
+
     function isCodeIntent(t) {
       const s = t.toLowerCase();
       return /(코드|예제|샘플|파일|만들어줘|작성|구현|template|snippet|example|code)/.test(s);
@@ -670,17 +926,24 @@ async function startInteractiveMode(providerOverride) {
       return;
     }
 
-    // 추가 템플릿 처리 (버블 정렬/피보나치 등)
+    // 공통 템플릿 처리 (정렬/포인터 등)
+    if (await maybeRenderCommonTemplates(text)) {
+      history.push({ role: 'user', content: text });
+      rl.prompt();
+      return;
+    }
+
+    // 파이썬 전용 템플릿 처리 (버블 정렬/피보나치 등)
     if (await maybeRenderPythonTemplate(text)) {
       history.push({ role: 'user', content: text });
       rl.prompt();
       return;
     }
 
-    // 언어 지정 + 코드 의도가 있는 요청이면 제네릭 스니펫 생성
+    // 언어 지정 + 코드 의도가 있는 요청이면 AI로 코드 생성 (실패 시 스니펫 대체)
     const detectedLang = detectLang(text);
-    if (detectedLang && isCodeIntent(text)) {
-      await createGenericSnippet(detectedLang);
+    if (detectedLang && isCodeRequest(text)) {
+      await createCodeViaAI(detectedLang, text);
       history.push({ role: 'user', content: text });
       rl.prompt();
       return;
