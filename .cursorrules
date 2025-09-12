@@ -25,7 +25,7 @@
 
 ## Behavior
 - Chat: 온라인 전용(OpenAI), 폴백 없음. 기본 모델은 `gpt-4o-mini`(환경변수 `CT_OPENAI_MODEL`로 재정의 가능)
- - Chat: 온라인 전용(OpenAI), 폴백 없음. 기본 모델은 `gpt-4o-mini`(환경변수 `CT_OPENAI_MODEL`로 재정의 가능)
+ - Chat: 온라인 전용(OpenAI), 폴백 없음. 기본 모델은 `gpt-4o-mini`(환경변수 `CT_OPENAI_MODEL`로진행 재정의 가능)
  - 사용량 표시: `ct chat --show-usage` 또는 REPL 명령 `/usage on|off`로 토큰/비용 추정 출력
 - Doctor: 실행 결과/오류 수집 후 AI 설명(온라인)
 - Quest: `quest new/run` 그대로 유지, 파일 쓰기는 `quests/` 하위

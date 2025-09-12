@@ -1,6 +1,8 @@
 const readline = require('readline');
 const chalk = require('chalk');
 const { loadConfig, saveUserConfig, hasUserConfig } = require('../config');
+const path = require('path');
+const { writeFileSafe } = require('../utils/fs');
 const { createAI } = require('../ai/provider');
 
 function banner() {
@@ -158,34 +160,169 @@ async function startInteractiveMode(providerOverride) {
       return rl.prompt();
     }
 
-    function isGugudanPython(t) {
+    // 언어/요청 감지
+    function detectLang(t) {
       const s = t.toLowerCase();
-      const hasPython = /(python|파이썬|py)/.test(s);
-      const hasGugudan = /(구구\s*단|구구돈|gugudan|multiplication\s*table)/.test(s);
-      return hasPython && hasGugudan;
+      if (/(python|파이썬|py)/.test(s)) return 'python';
+      if (/(kotlin|코틀린|kt)/.test(s)) return 'kotlin';
+      if (/(java|자바)/.test(s)) return 'java';
+      if (/(\bc\+\+\b|cpp|c\+\+)/.test(s)) return 'cpp';
+      if (/(\bc\b|c언어)/.test(s)) return 'c';
+      if (/(typescript|ts)/.test(s)) return 'ts';
+      if (/(javascript|자바스크립트|js)/.test(s)) return 'js';
+      return null;
     }
 
-    function randomPyName() {
-      const c = String.fromCharCode(97 + Math.floor(Math.random() * 26));
-      return `${c}.py`;
+    function isGugudan(t) {
+      const s = t.toLowerCase();
+      return /(구구\s*단|구구돈|gugudan|multiplication\s*table)/.test(s);
     }
 
-    function renderGugudan() {
-      const fname = randomPyName();
-      const code = [
-        `# ${fname} - 파이썬 구구단 (1~9)`,
-        `# 각 줄에 1~9까지 곱셈 결과를 출력합니다.`,
-        `def main():`,
-        `    for i in range(1, 10):`,
-        `        line = []`,
-        `        for j in range(1, 10):`,
-        `            line.append(f"{i} x {j} = {i*j}")`,
-        `        print('   '.join(line))`,
-        ``,
-        `if __name__ == "__main__":`,
-        `    main()`,
-      ].join('\n');
-      const display = `=== ${fname} ===\n${code}`;
+    function randomName(ext) {
+      const letters = 'abcdefghijklmnopqrstuvwxyz';
+      let base = '';
+      for (let i = 0; i < 8; i++) base += letters[Math.floor(Math.random() * letters.length)];
+      return `${base}.${ext}`;
+    }
+
+    function langToExt(lang) {
+      switch (lang) {
+        case 'python': return 'py';
+        case 'java': return 'java';
+        case 'kotlin': return 'kt';
+        case 'c': return 'c';
+        case 'cpp': return 'cpp';
+        case 'js': return 'mjs';
+        case 'ts': return 'ts';
+        default: return 'txt';
+      }
+    }
+
+    function gugudanCode(lang, fname) {
+      const base = fname.replace(/\.[^.]+$/, '');
+      const javaClass = base.length ? (base[0].toUpperCase() + base.slice(1)) : 'Main';
+      switch (lang) {
+        case 'python':
+          return [
+            `# ${fname} - 파이썬 구구단 (1~9)`,
+            `# 각 줄에 1부터 9까지의 곱셈 결과를 보기 좋게 출력합니다.`,
+            `def main():  # 프로그램의 시작점이 되는 함수 정의`,
+            `    for i in range(1, 10):  # i는 1부터 9까지(행에 해당)`,
+            `        line = []  # 한 줄에 출력할 문자열들을 담을 리스트`,
+            `        for j in range(1, 10):  # j는 1부터 9까지(열에 해당)`,
+            `            line.append(f"{i} x {j} = {i*j}")  # f-문자열로 'i x j = 결과' 형태 추가`,
+            `        print('   '.join(line))  # 리스트를 공백 3칸으로 이어서 한 줄로 출력`,
+            `
+            `,
+            `if __name__ == "__main__":  # 이 파일을 직접 실행했을 때만`,
+            `    main()  # main() 함수를 호출하여 프로그램 시작`
+          ].join('\n');
+        case 'java':
+          return [
+            `// ${fname} - 자바 구구단 (1~9)`,
+            `// 각 줄에 1부터 9까지의 곱셈 결과를 보기 좋게 출력합니다.`,
+            `public class ${javaClass} {  // 클래스 이름은 파일명과 동일해야 합니다`,
+            `    public static void main(String[] args) {  // 자바 프로그램의 진입점`,
+            `        for (int i = 1; i <= 9; i++) {  // i는 1부터 9까지(행)`,
+            `            StringBuilder line = new StringBuilder();  // 한 줄을 담을 버퍼`,
+            `            for (int j = 1; j <= 9; j++) {  // j는 1부터 9까지(열)`,
+            `                line.append(i).append(" x ").append(j).append(" = ")`,
+            `                    .append(i*j);  // 'i x j = 결과' 이어 붙이기`,
+            `                if (j < 9) line.append("   ");  // 항목 사이 간격 3칸`,
+            `            }`,
+            `            System.out.println(line.toString());  // 한 줄 출력`,
+            `        }`,
+            `    }`,
+            `}`
+          ].join('\n');
+        case 'kotlin':
+          return [
+            `// ${fname} - 코틀린 구구단 (1~9)`,
+            `// 각 줄에 1부터 9까지의 곱셈 결과를 보기 좋게 출력합니다.`,
+            `fun main() {  // 코틀린 프로그램의 진입점`,
+            `    for (i in 1..9) {  // i는 1부터 9까지(행)`,
+            `        val parts = mutableListOf<String>()  // 한 줄을 구성할 문자열 목록`,
+            `        for (j in 1..9) {  // j는 1부터 9까지(열)`,
+            `            parts.add("$i x $j = ${i*j}")  // 문자열 템플릿으로 항목 추가`,
+            `        }`,
+            `        println(parts.joinToString("   "))  // 항목 사이 간격 3칸`,
+            `    }`,
+            `}`
+          ].join('\n');
+        case 'c':
+          return [
+            `// ${fname} - C 언어 구구단 (1~9)`,
+            `// 각 줄에 1부터 9까지의 곱셈 결과를 보기 좋게 출력합니다.`,
+            `#include <stdio.h>  // 표준 입출력을 사용하기 위한 헤더`,
+            `int main(void) {  // C 프로그램의 시작점`,
+            `    for (int i = 1; i <= 9; i++) {  // i는 1부터 9까지(행)`,
+            `        for (int j = 1; j <= 9; j++) {  // j는 1부터 9까지(열)`,
+            `            printf("%d x %d = %d", i, j, i*j);  // 'i x j = 결과' 출력`,
+            `            if (j < 9) printf("   ");  // 항목 사이 간격 3칸`,
+            `        }`,
+            `        printf("\n");  // 줄바꿈`,
+            `    }`,
+            `    return 0;  // 정상 종료`,
+            `}`
+          ].join('\n');
+        case 'cpp':
+          return [
+            `// ${fname} - C++ 구구단 (1~9)`,
+            `// 각 줄에 1부터 9까지의 곱셈 결과를 보기 좋게 출력합니다.`,
+            `#include <bits/stdc++.h>  // 편의를 위한 헤더(온라인 저지 스타일)`,
+            `using namespace std;`,
+            `int main(){  // C++ 프로그램의 시작점`,
+            `    for(int i=1;i<=9;i++){  // i는 1부터 9까지(행)`,
+            `        vector<string> parts;  // 한 줄을 구성할 문자열 벡터`,
+            `        for(int j=1;j<=9;j++){  // j는 1부터 9까지(열)`,
+            `            parts.push_back(to_string(i)+" x "+to_string(j)+" = "+to_string(i*j));  // 항목 추가`,
+            `        }`,
+            `        for(size_t k=0;k<parts.size();k++){  // 항목 출력`,
+            `            cout << parts[k];`,
+            `            if (k+1<parts.size()) cout << "   ";  // 간격 3칸`,
+            `        }`,
+            `        cout << "\n";  // 줄바꿈`,
+            `    }`,
+            `    return 0;  // 정상 종료`,
+            `}`
+          ].join('\n');
+        case 'js':
+          return [
+            `// ${fname} - 자바스크립트(Node.js) 구구단 (1~9)`,
+            `// 각 줄에 1부터 9까지의 곱셈 결과를 보기 좋게 출력합니다.`,
+            `for (let i = 1; i <= 9; i++) {  // i는 1부터 9까지(행)`,
+            `  const parts = [];  // 한 줄을 구성할 문자열 배열`,
+            `  for (let j = 1; j <= 9; j++) {  // j는 1부터 9까지(열)`,
+            `    parts.push(\`${'${i}'} x ${'${j}'} = ${'${i*j}'}\`);  // 템플릿 문자열로 항목 추가`,
+            `  }`,
+            `  console.log(parts.join('   '));  // 항목 사이 간격 3칸`,
+            `}`
+          ].join('\n');
+        case 'ts':
+          return [
+            `// ${fname} - 타입스크립트 구구단 (1~9)`,
+            `// 각 줄에 1부터 9까지의 곱셈 결과를 보기 좋게 출력합니다.`,
+            `for (let i: number = 1; i <= 9; i++) {  // i는 1부터 9까지(행)`,
+            `  const parts: string[] = [];  // 한 줄을 구성할 문자열 배열`,
+            `  for (let j: number = 1; j <= 9; j++) {  // j는 1부터 9까지(열)`,
+            `    parts.push(\`${'${i}'} x ${'${j}'} = ${'${i*j}'}\`);  // 템플릿 문자열로 항목 추가`,
+            `  }`,
+            `  console.log(parts.join('   '));  // 항목 사이 간격 3칸`,
+            `}`
+          ].join('\n');
+        default:
+          return `# ${fname} - 구구단 예제 코드 (지원 언어 아님)`;
+      }
+    }
+
+    async function createAndShowGugudan(lang) {
+      const ext = langToExt(lang);
+      const outDir = (loadConfig().outputDir) || 'lessons';
+      const fname = randomName(ext);
+      const full = path.join(outDir, fname);
+      const code = gugudanCode(lang, fname);
+      await writeFileSafe(full, code);
+      const display = [`파일 생성: ${full}`, '', code].join('\n');
       history.push({ role: 'assistant', content: display });
       console.log(`\n${display}\n`);
     }
@@ -249,10 +386,11 @@ async function startInteractiveMode(providerOverride) {
       return false;
     }
 
-    // 코드 요청(구구단+파이썬) 즉시 처리
-    if (isGugudanPython(text)) {
+    // 코드 요청(구구단 + 언어) 즉시 파일로 생성 후 표시
+    if (isGugudan(text)) {
+      const lang = detectLang(text) || 'python';
       history.push({ role: 'user', content: text });
-      renderGugudan();
+      await createAndShowGugudan(lang);
       rl.prompt();
       return;
     }
