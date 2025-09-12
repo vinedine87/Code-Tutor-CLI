@@ -25,13 +25,14 @@ function isTextFile(file) {
   return exts.includes(ext);
 }
 
-function scanContent(txt) {
+function scanContent(txt, file) {
   const rules = [
     { re: /sk-[A-Za-z0-9]{20,}/, msg: 'OpenAI API key-like token detected (sk-...)' },
     { re: /hf_[A-Za-z0-9]{20,}/, msg: 'Hugging Face token-like string detected (hf_...)' },
     { re: /AKIA[0-9A-Z]{16}/, msg: 'AWS Access Key ID detected (AKIA...)' },
     { re: /AWS_SECRET_ACCESS_KEY|aws_secret_access_key/i, msg: 'AWS secret key marker' },
-    { re: /OPENAI_API_KEY|HF_API_TOKEN|API_KEY|API-TOKEN|AUTH_TOKEN/i, msg: 'API key environment marker' },
+    // README.md의 경우 API 키 환경 변수 경고를 건너뜁니다.
+    { re: /OPENAI_API_KEY|HF_API_TOKEN|API_KEY|API-TOKEN|AUTH_TOKEN/i, msg: 'API key environment marker', skipFor: 'README.md' },
     { re: /Authorization:\s*Bearer\s+[A-Za-z0-9._-]+/i, msg: 'Authorization Bearer token' },
     // Prompt/chat transcript heuristics
     { re: /^ct\s*[>\]]/m, msg: 'CLI prompt transcript (ct > ...) detected' },
@@ -39,6 +40,7 @@ function scanContent(txt) {
   ];
   const hits = [];
   for (const r of rules) {
+    if (r.skipFor === file) continue; // 특정 파일에 대한 규칙 건너뛰기
     if (r.re.test(txt)) hits.push(r.msg);
   }
   return hits;
@@ -56,7 +58,7 @@ function main() {
       const stat = fs.statSync(f);
       if (stat.size > 2 * 1024 * 1024) continue; // skip >2MB
       const txt = fs.readFileSync(f, 'utf-8');
-      const hits = scanContent(txt);
+      const hits = scanContent(txt, f); // 파일 이름을 scanContent에 전달
       if (hits.length) problems.push({ file: f, hits });
     } catch (_) {}
   }

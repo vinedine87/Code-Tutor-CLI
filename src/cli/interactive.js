@@ -262,7 +262,7 @@ async function startInteractiveMode(providerOverride) {
             `    for (i in 1..9) {  // i는 1부터 9까지(행)`,
             `        val parts = mutableListOf<String>()  // 한 줄을 구성할 문자열 목록`,
             `        for (j in 1..9) {  // j는 1부터 9까지(열)`,
-            `            parts.add("$i x $j = ${i*j}")  // 문자열 템플릿으로 항목 추가`,
+            `            parts.add("$i x $j = \${i*j}")  // 문자열 템플릿으로 항목 추가`,
             `        }`,
             `        println(parts.joinToString("   "))  // 항목 사이 간격 3칸`,
             `    }`,
@@ -487,7 +487,7 @@ async function startInteractiveMode(providerOverride) {
       tryOpenFile(full);
     }
 
-    function maybeRenderPythonTemplate(t) {
+    async function maybeRenderPythonTemplate(t) {
       const s = t.toLowerCase();
       const isPython = /(python|파이썬|py)/.test(s);
       if (!isPython) return false;
@@ -515,13 +515,11 @@ async function startInteractiveMode(providerOverride) {
           `    main()`,
         ].join('\n');
         const full = path.join(outDir, fname);
-        return (async () => {
-          await writeFileSafe(full, code);
-          const display = [`파일 생성: ${full}`, '', code].join('\n');
-          history.push({ role: 'assistant', content: display });
-          console.log(`\n${display}\n`);
-          tryOpenFile(full);
-        })().then(() => true);
+        await writeFileSafe(full, code);
+        const display = [`파일 생성: ${full}`, '', code].join('\n');
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        tryOpenFile(full);
         return true;
       }
       // 피보나치
@@ -546,13 +544,11 @@ async function startInteractiveMode(providerOverride) {
           `    main()`,
         ].join('\n');
         const full = path.join(outDir, fname);
-        return (async () => {
-          await writeFileSafe(full, code);
-          const display = [`파일 생성: ${full}`, '', code].join('\n');
-          history.push({ role: 'assistant', content: display });
-          console.log(`\n${display}\n`);
-          tryOpenFile(full);
-        })().then(() => true);
+        await writeFileSafe(full, code);
+        const display = [`파일 생성: ${full}`, '', code].join('\n');
+        history.push({ role: 'assistant', content: display });
+        console.log(`\n${display}\n`);
+        tryOpenFile(full);
         return true;
       }
       return false;
@@ -585,7 +581,7 @@ async function startInteractiveMode(providerOverride) {
     }
 
     // 추가 템플릿 처리 (버블 정렬/피보나치 등)
-    if (maybeRenderPythonTemplate(text)) {
+    if (await maybeRenderPythonTemplate(text)) {
       history.push({ role: 'user', content: text });
       rl.prompt();
       return;

@@ -1,6 +1,6 @@
 {
   "name": "code-tutor-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Code Tutor CLI: 학습/연습/도우미 도구 (OpenAI 연동)",
   "keywords": [
     "cli",
