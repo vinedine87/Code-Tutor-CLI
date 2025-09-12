@@ -472,6 +472,96 @@ async function startInteractiveMode(providerOverride) {
       }
     }
 
+    function isCodeIntent(t) {
+      const s = t.toLowerCase();
+      return /(코드|예제|샘플|파일|만들어줘|작성|구현|template|snippet|example|code)/.test(s);
+    }
+
+    function genericCode(lang, fname) {
+      switch (lang) {
+        case 'python':
+          return [
+            `# ${fname} - Python snippet`,
+            `def main():`,
+            `    print('Hello from Python snippet')`,
+            ``,
+            `if __name__ == '__main__':`,
+            `    main()`
+          ].join('\n');
+        case 'java':
+          return [
+            `// ${fname} - Java snippet`,
+            `public class ${fname.replace(/\.[^.]+$/, '')} {`,
+            `  public static void main(String[] args) {`,
+            `    System.out.println("Hello from Java snippet");`,
+            `  }`,
+            `}`
+          ].join('\n');
+        case 'kotlin':
+          return [
+            `// ${fname} - Kotlin snippet`,
+            `fun main() {`,
+            `  println("Hello from Kotlin snippet")`,
+            `}`
+          ].join('\n');
+        case 'c':
+          return [
+            `// ${fname} - C snippet`,
+            `#include <stdio.h>`,
+            `int main(void){`,
+            `  printf("Hello from C snippet\n");`,
+            `  return 0;`,
+            `}`
+          ].join('\n');
+        case 'cpp':
+          return [
+            `// ${fname} - C++ snippet`,
+            `#include <bits/stdc++.h>`,
+            `using namespace std;`,
+            `int main(){`,
+            `  cout << "Hello from C++ snippet\n";`,
+            `  return 0;`,
+            `}`
+          ].join('\n');
+        case 'js':
+          return [
+            `// ${fname} - JavaScript (Node.js) snippet`,
+            `console.log('Hello from JS snippet');`
+          ].join('\n');
+        case 'ts':
+          return [
+            `// ${fname} - TypeScript snippet`,
+            `const msg: string = 'Hello from TS snippet';`,
+            `console.log(msg);`
+          ].join('\n');
+        default:
+          return `# ${fname} - snippet`;
+      }
+    }
+
+    async function createGenericSnippet(lang) {
+      const ext = langToExt(lang);
+      const outDir = process.cwd();
+      const baseMap = {
+        python: 'python_snippet',
+        java: 'JavaSnippet',
+        kotlin: 'KotlinSnippet',
+        c: 'c_snippet',
+        cpp: 'cpp_snippet',
+        js: 'js_snippet',
+        ts: 'ts_snippet'
+      };
+      const base = baseMap[lang] || 'snippet';
+      const full = nextAvailableFile(outDir, base, ext);
+      const fname = path.basename(full);
+      const code = genericCode(lang, fname);
+      await writeFileSafe(full, code);
+      const display = [`파일 생성: ${full}`, '', code].join('\n');
+      history.push({ role: 'assistant', content: display });
+      console.log(`\n${display}\n`);
+      tryOpenFile(full);
+    }
+
     async function createAndShowGugudan(lang) {
       const ext = langToExt(lang);
       const outDir = process.cwd();
@@ -582,6 +672,15 @@ async function startInteractiveMode(providerOverride) {
 
     // 추가 템플릿 처리 (버블 정렬/피보나치 등)
     if (await maybeRenderPythonTemplate(text)) {
+      history.push({ role: 'user', content: text });
+      rl.prompt();
+      return;
+    }
+
+    // 언어 지정 + 코드 의도가 있는 요청이면 제네릭 스니펫 생성
+    const detectedLang = detectLang(text);
+    if (detectedLang && isCodeIntent(text)) {
+      await createGenericSnippet(detectedLang);
       history.push({ role: 'user', content: text });
       rl.prompt();
       return;
