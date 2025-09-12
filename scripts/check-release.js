@@ -17,8 +17,8 @@ try {
     }
   }
   const src = fs.readFileSync('src/ai/provider.js', 'utf-8');
-  if (!/huggingface/i.test(src)) fail('provider does not return huggingface client');
-  if (/transformers|ollama|gemini/i.test(src)) fail('provider contains offline/other providers');
+  if (!/openai/i.test(src)) fail('provider does not return openai client');
+  if (/transformers|ollama|gemini|huggingface/i.test(src)) fail('provider contains offline/other providers');
 
   console.log('[check-release] OK');
 } catch (e) {
