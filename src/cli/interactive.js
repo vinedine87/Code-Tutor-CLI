@@ -13,25 +13,28 @@ function banner() {
     return;
   }
 
+  // Gemini CLI 스타일의 둥근 상자(rounded box), 노란 배경 + 검정 테두리/텍스트
   const title = 'CODE TUTOR';
-  const padH = 6; // 좌우 여백(가로)
-  const padV = 2; // 상하 여백(세로, 기존보다 조금 더 크게)
-  const width = Math.max(40, title.length + padH * 2);
-  const empty = ' '.repeat(width);
-  const top = chalk.bgYellow(' '.repeat(width));
-  const midEmpty = chalk.bgYellow(' '.repeat(width));
-  const lineText = centerText(title, width);
-  const midText = chalk.bgYellow.black.bold(lineText);
+  const sub = 'Interactive CLI';
+  const innerPadH = 6; // 좌우 여백(내용 기준)
+  const innerPadV = 1; // 제목 위/아래 내부 여백
+  const contentWidth = Math.max(title.length, sub.length) + innerPadH * 2;
+  const width = Math.max(54, contentWidth); // 조금 더 크게(최소 54 컬럼)
+
+  const top    = chalk.bgYellow.black('╭' + '─'.repeat(width - 2) + '╮');
+  const bottom = chalk.bgYellow.black('╰' + '─'.repeat(width - 2) + '╯');
+  const empty  = chalk.bgYellow.black('│' + ' '.repeat(width - 2) + '│');
+
+  const titleLine = chalk.bgYellow.black.bold('│' + centerText(title, width - 2) + '│');
+  const subLine   = chalk.bgYellow.black('│' + centerText(sub,   width - 2) + '│');
 
   console.log();
-  // 상단 여백 블록
-  for (let i = 0; i < padV; i++) console.log(top);
-  // 본문(제목) 전/후로 여백 한 줄
-  console.log(midEmpty);
-  console.log(midText);
-  console.log(midEmpty);
-  // 하단 여백 블록
-  for (let i = 0; i < padV; i++) console.log(top);
+  console.log(top);
+  for (let i = 0; i < innerPadV; i++) console.log(empty);
+  console.log(titleLine);
+  console.log(subLine);
+  for (let i = 0; i < innerPadV; i++) console.log(empty);
+  console.log(bottom);
 
   // 가이드 라인(노란색 유지)
   console.log(chalk.bgYellow.black.bold(' 도움말: /help   모드 변경: /mode   종료: exit '));
