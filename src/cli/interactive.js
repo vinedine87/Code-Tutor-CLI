@@ -4,25 +4,46 @@ const { loadConfig, saveUserConfig, hasUserConfig } = require('../config');
 const { createAI } = require('../ai/provider');
 
 function banner() {
-  if (String(process.env.CT_NO_ASCII || '').toLowerCase() === '1' || String(process.env.CT_NO_ASCII || '').toLowerCase() === 'true') {
+  const noAscii = String(process.env.CT_NO_ASCII || '').toLowerCase();
+  if (noAscii === '1' || noAscii === 'true') {
     console.log(chalk.bgYellow.black.bold('\n Code Tutor '));
     console.log(chalk.bgYellow.black.bold(' 도움말: /help   모드 변경: /mode   종료: exit '));
     console.log(chalk.bgYellow.black.bold(' 모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반 '));
     console.log();
     return;
   }
-  const title = String.raw`
-   CCCCC   OOOOO    DDDDD    EEEEE           TTTTT    U   U    TTTTT    OOOOO    RRRRR 
-  C     C O     O   D    D   E                 T      U   U      T     O     O   R    R
-  C       O     O   D     D  EEEE              T      U   U      T     O     O   RRRRR 
-  C       O     O   D     D  E                 T      U   U      T     O     O   R   R 
-  C     C O     O   D    D   E                 T      U   U      T     O     O   R    R
-   CCCCC   OOOOO    DDDDD    EEEEE             T       UUU       T      OOOOO    R     R`;
-  console.log('\n' + chalk.bgYellow.black.bold(title));
-  console.log(chalk.bgYellow.black.bold(' Code Tutor '));
+
+  const title = 'CODE TUTOR';
+  const padH = 6; // 좌우 여백(가로)
+  const padV = 2; // 상하 여백(세로, 기존보다 조금 더 크게)
+  const width = Math.max(40, title.length + padH * 2);
+  const empty = ' '.repeat(width);
+  const top = chalk.bgYellow(' '.repeat(width));
+  const midEmpty = chalk.bgYellow(' '.repeat(width));
+  const lineText = centerText(title, width);
+  const midText = chalk.bgYellow.black.bold(lineText);
+
+  console.log();
+  // 상단 여백 블록
+  for (let i = 0; i < padV; i++) console.log(top);
+  // 본문(제목) 전/후로 여백 한 줄
+  console.log(midEmpty);
+  console.log(midText);
+  console.log(midEmpty);
+  // 하단 여백 블록
+  for (let i = 0; i < padV; i++) console.log(top);
+
+  // 가이드 라인(노란색 유지)
   console.log(chalk.bgYellow.black.bold(' 도움말: /help   모드 변경: /mode   종료: exit '));
   console.log(chalk.bgYellow.black.bold(' 모드 안내: 1) 초등학생  2) 중학생  3) 고등학생  4) 대학생  5) 일반 '));
   console.log();
+}
+
+function centerText(txt, width) {
+  const t = ` ${txt} `; // 안쪽 여백
+  const left = Math.floor((width - t.length) / 2);
+  const right = width - t.length - left;
+  return ' '.repeat(left) + t + ' '.repeat(right);
 }
 
 function modeMap() {
@@ -72,6 +93,7 @@ async function startInteractiveMode(providerOverride) {
   let ai = createAI(cfg);
   const history = [];
   let currentMode = null;
+  let showUsage = /^1|true$/i.test(String(process.env.CT_SHOW_USAGE || '0'));
 
   banner();
 
@@ -118,6 +140,19 @@ async function startInteractiveMode(providerOverride) {
       currentMode = null;
       rl.setPrompt('ct > ');
       return askMode();
+    }
+    if (text.startsWith('/usage')) {
+      const arg = text.split(/\s+/)[1] || '';
+      if (/^(on|1|true)$/i.test(arg)) {
+        showUsage = true;
+        console.log('토큰 사용량 표시가 활성화되었습니다.');
+      } else if (/^(off|0|false)$/i.test(arg)) {
+        showUsage = false;
+        console.log('토큰 사용량 표시가 비활성화되었습니다.');
+      } else {
+        console.log(`사용법: /usage on | /usage off (현재: ${showUsage ? 'on' : 'off'})`);
+      }
+      return rl.prompt();
     }
 
     function isGugudanPython(t) {
@@ -236,6 +271,14 @@ async function startInteractiveMode(providerOverride) {
       const assistant = res?.message?.content || res?.content || JSON.stringify(res);
       history.push({ role: 'assistant', content: assistant });
       console.log(`\n${assistant}\n`);
+      if (showUsage && res && res.usage) {
+        const u = res.usage;
+        const model = res.model || (cfg.openai && cfg.openai.modelPrimary) || 'gpt-4o-mini';
+        const cost = estimateCostUSD(model, u);
+        const parts = [`model=${model}`, `prompt=${u.prompt_tokens||0}`, `completion=${u.completion_tokens||0}`, `total=${u.total_tokens||0}`];
+        if (cost != null) parts.push(`est_cost=$${cost.toFixed(6)}`);
+        console.log(chalk.gray(`[usage] ${parts.join('  ')}`));
+      }
     } catch (err) {
       // 온라인 전용: 실패 시 즉시 오류 메시지를 안내하고 템플릿만 제한적으로 제공
       let fallback = '';
@@ -281,3 +324,17 @@ for i in range(1, 10):
 }
 
 module.exports = startInteractiveMode;
+
+// 간단 비용 추정(대략): 모델별 입력/출력 단가(USD per token)
+function estimateCostUSD(model, usage) {
+  if (!usage) return null;
+  const name = String(model || '').toLowerCase();
+  const PRICING = [
+    { match: /gpt-4o-mini/, inPTok: 0.15/1e6, outPTok: 0.60/1e6 },
+  ];
+  const p = PRICING.find(p => p.match.test(name));
+  if (!p) return null;
+  const pin = (usage.prompt_tokens||0) * p.inPTok;
+  const pout = (usage.completion_tokens||0) * p.outPTok;
+  return pin + pout;
+}

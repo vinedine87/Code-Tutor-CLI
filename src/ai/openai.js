@@ -23,7 +23,9 @@ function createOpenAIClient(cfg) {
       max_tokens
     });
     const text = res?.choices?.[0]?.message?.content || '';
-    return { message: { content: text } };
+    const usage = res?.usage || null;
+    const modelUsed = res?.model || mdl;
+    return { message: { content: text }, usage, model: modelUsed };
   }
 
   async function generate({ model, prompt, stream = false, options = {} }) {
@@ -37,7 +39,9 @@ function createOpenAIClient(cfg) {
       max_tokens
     });
     const text = res?.choices?.[0]?.message?.content || '';
-    return { message: { content: text } };
+    const usage = res?.usage || null;
+    const modelUsed = res?.model || mdl;
+    return { message: { content: text }, usage, model: modelUsed };
   }
 
   async function listModels() {
@@ -48,4 +52,3 @@ function createOpenAIClient(cfg) {
 }
 
 module.exports = { createOpenAIClient };
-
