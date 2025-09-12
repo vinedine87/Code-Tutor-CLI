@@ -1,7 +1,7 @@
 $ npm run smoke:api
 
-> code-tutor-cli@0.2.4 smoke:api
+> code-tutor-cli@0.2.6 smoke:api
 > node scripts/smoke-api.js
 
-[smoke:api] calling Inference API: Qwen/Qwen2-1.5B-Instruct
+[smoke:api] calling Inference API: TinyLlama/TinyLlama-1.1B-Chat-v1.0
 [smoke:api] FAIL: An error occurred while fetching the blob

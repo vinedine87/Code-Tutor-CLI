@@ -48,10 +48,18 @@ function resolveMode(input) {
 async function ensureFirstRunConfig(cfg, providerOverride) {
   if (hasUserConfig()) return cfg;
   try {
-    const next = { ...cfg, provider: providerOverride || 'huggingface' };
+    // 첫 저장 시 민감정보(apiToken)는 저장하지 않도록 마스킹
+    const masked = {
+      ...cfg,
+      provider: providerOverride || 'huggingface',
+      huggingface: {
+        ...(cfg.huggingface || {}),
+        apiToken: ''
+      }
+    };
     // 최초 실행 시에도 설정 저장 안내 문구는 표시하지 않습니다.
-    saveUserConfig(next);
-    return next;
+    saveUserConfig(masked);
+    return masked;
   } catch (_) {
     return cfg;
   }

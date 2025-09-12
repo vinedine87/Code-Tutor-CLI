@@ -13,7 +13,8 @@
   - 학습 난이도 모드(초등/중학/고등/대학/일반)를 선택한 뒤 질문을 입력하세요.
 
 온라인 모델 사용(기본)
-- Hugging Face Inference: `HF_API_TOKEN=... ct chat`
+- Hugging Face Inference(기본 모델: Qwen/Qwen2.5-7B-Instruct): `HF_API_TOKEN=... ct chat`
+  - 다른 모델을 쓰려면: `CT_HF_MODEL=모델이름 ct chat`
 
 예시
 ```
@@ -35,7 +36,7 @@ ct[elem] > 파이썬으로 구구단 코드 만들어줘
 {
   "provider": "huggingface",
   "huggingface": {
-    "modelPrimary": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "modelPrimary": "Qwen/Qwen2.5-7B-Instruct",
     "maxNewTokens": 256,
     "temperature": 0.7
   }
@@ -80,6 +81,7 @@ ct chat
 문제 해결 팁
 - 모델 페이지에서 사용 약관 동의가 필요한 경우, 해당 모델 페이지에서 먼저 동의해야 API 호출이 정상 동작합니다.
 - 토큰 오타/만료 여부와 네트워크 상태를 확인하세요.
+- 일시적 5xx가 발생하면 잠시 후 재시도하거나 `CT_HF_MODEL`로 다른 공개 모델을 지정하세요. (기본 호출은 `wait_for_model=true`로 대기 시도)
 
 ## Windows(PowerShell) 설치/실행 순서
 
