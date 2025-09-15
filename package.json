@@ -1,6 +1,6 @@
 {
   "name": "code-tutor-cli",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Code Tutor CLI: 학습/연습/도우미 도구 (OpenAI 연동)",
   "keywords": [
     "cli",
@@ -42,17 +42,18 @@
     "prepare": "echo 'husky not configured'",
     "precommit:scan": "node scripts/precommit-scan.js",
     "setup:hooks": "git config core.hooksPath .githooks && echo 'hooksPath set to .githooks'",
-    "postinstall": "node scripts/postinstall.js || true"
+    "postinstall": "node scripts/postinstall.js || true",
+    "image:brand": "node scripts/brand-image.js"
   },
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
-    "openai": "^4.56.0",
     "fs-extra": "^11.2.0",
     "inquirer": "^9.2.15",
-    "ora": "^5.4.1"
+    "openai": "^4.56.0",
+    "ora": "^5.4.1",
+    "sharp": "^0.33.5"
   },
-  "optionalDependencies": {},
   "devDependencies": {
     "pkg": "^5.8.1"
   },
